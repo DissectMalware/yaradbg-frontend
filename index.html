@@ -17,6 +17,7 @@
             integrity="sha256-hlKLmzaRlE8SCJC1Kw8zoUbU8BxA+8kR3gseuKfMjxA="
             crossorigin="anonymous"></script>
     <script type="text/javascript" src="js/external/jquery.layout_and_plugins.min.js"></script>
+    <script src="js/external/jquery.lazytable.min.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
 
 
@@ -39,12 +40,15 @@
             <div id="panels" style="height: 90%;">
 
                 <div id="main_tab" class="tab-panel" >
-                </div><!-- /#tab1 -->
-                <div id="hexedt_tab1" class="tab-panel" >
-                </div><!-- /#tab1 -->
-
-
-            </div><!-- /#tabpanels -->
+                </div>
+                <div id="hexedt_tab1" class="tab-panel hexeditor_panel clusterize-scroll" >
+                    <div id="hexedt_wrapper1" class="tableWrapper" style="height:100%;">
+                        <table>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>
