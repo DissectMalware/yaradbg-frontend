@@ -38,21 +38,16 @@ $(document).ready(function () {
         , east__spacing_closed: 12
     });
 
-    var table_wrapper_template = '<div class="tableWrapper" id="hexeditor{{}}" style="height:100%;">\n' +
-        '                        <table>\n' +
-        '                            <tbody></tbody>\n' +
-        '                        </table>\n' +
-        '                     </div>' +
-        '                     <div class="file_name" id="filename{{}}" style="display:none;"></div>'
 
-    var tab_counter = 1
-    var file_object = null
+    $('#tabpanel').data('hex_editor_tab_counter', 0)
     innerLayout.center.pane
         .tabs({
             closable: true,
             activate: function (event, ui) {
                 if (ui.newPanel.hasClass('hexeditor_panel')) {
-                    if (file_object != null) {
+                    debugger;
+                    var file = ui.newPanel.data('attached_file')
+                    if (file != undefined) {
                         var reader = new FileReader();
                         var startTime = performance.now()
                         reader.onloadend = (evt) => {
@@ -62,23 +57,16 @@ $(document).ready(function () {
 
                                 let fileByteArray = new Proxy(array, {
                                     get: (original, key) => {
-                                        if(!isNaN(key))
-                                        {
-                                            let index = parseInt(key)* 16
+                                        if (!isNaN(key)) {
+                                            let index = parseInt(key) * 16
                                             let tmp = []
-                                            tmp.push(index, original.slice(index, Math.min(index+16, original.length)))
+                                            tmp.push(index, original.slice(index, Math.min(index + 16, original.length)))
                                             return tmp;
-                                        }
-                                        else if(key == 'length')
-                                        {
-                                            return (Math.ceil(original.length / 16))+1
-                                        }
-                                        else
-                                        {
+                                        } else if (key == 'length') {
+                                            return (Math.ceil(original.length / 16)) + 1
+                                        } else {
                                             return original[key]
                                         }
-
-
                                     }
                                 });
 
@@ -90,8 +78,7 @@ $(document).ready(function () {
 
                         }
                         reader.readAsArrayBuffer(file);
-                        file_object = null
-                    } else {
+                    } else if (ui.newPanel.hasClass("hexeditor_demo")) {
                         load_hex_editor(ui.newPanel.children('div')[0].id, [])
                     }
                 }
@@ -101,30 +88,9 @@ $(document).ready(function () {
                 event.stopPropagation();
                 event.preventDefault();
                 if (event.type == 'drop') {
-
                     for (let i = 0; i < event.originalEvent.dataTransfer.files.length; i++) {
                         file = event.originalEvent.dataTransfer.files[i]
-                        var num_tabs = tab_counter;
-                        tab_counter += 1
-                        var file_name = file.name;
-                        if (file_name.length > 12) {
-                            file_name = file_name.slice(0, 8) + '~' + file_name.slice(-4)
-                        }
-                        const number_of_tabs = $('div#tabpanel ul li').size();
-                        $('div#tabpanel ul').append('<li class="hex_editor_tab tab1">\n' +
-                            `                       <a href="#tab${num_tabs}" title="${file.name}">${file_name}</a>\n` +
-                            '                       <span class="ui-icon ui-icon-circle-close ui-closable-tab"></span>\n' +
-                            '                       </li>')
-                        table_wrapper = table_wrapper_template.replace('{{}}', num_tabs)
-                        $("div#panels").append(
-                            `<div id="tab${num_tabs}" class="hexeditor_panel">${table_wrapper}</div>`
-                        );
-                        file_object = file
-                        $('#tabpanel').tabs('refresh')
-                        $('#tabpanel').tabs("option", "active", number_of_tabs)
-
-                        $(".ui-closable-tab").click(close_tab_event_handler);
-                        console.log(event.originalEvent.dataTransfer.files);
+                        create_new_hexeditor_tab(file)
                     }
                     $('#tabpanel').css({'backgroundColor': 'white'})
                 } else if (event.type == 'dragover') {
@@ -136,6 +102,7 @@ $(document).ready(function () {
         )
         .find(".ui-tabs-nav").sortable({axis: 'x', zIndex: 2}).end()
     $("#accordion").accordion();
+
 
     $("#yara_panel").bind('dragover drop dragleave', (event) => {
         if (event.type == 'drop') {
@@ -152,6 +119,43 @@ $(document).ready(function () {
 
 
 });
+
+function create_new_hexeditor_tab(file) {
+
+    const table_wrapper_template = '<div class="tableWrapper" id="hexeditor{{}}" style="height:100%;">\n' +
+        '                               <table>\n' +
+        '                                   <tbody></tbody>\n' +
+        '                               </table>\n' +
+        '                           </div>' +
+        '                           <div class="file_name" id="filename{{}}" style="display:none;"></div>'
+
+    const num_tabs = $('#tabpanel').data('hex_editor_tab_counter');
+    $('#tabpanel').data('hex_editor_tab_counter', num_tabs + 1)
+    let file_name = file.name
+    let tab_name = file_name
+    if (file_name.length > 12) {
+        tab_name = file_name.slice(0, 8) + '~' + file_name.slice(-4)
+    }
+
+    const number_of_tabs = $('div#tabpanel ul li').size();
+    $('div#tabpanel ul').append(`<li id="hexEdtTab${num_tabs}" class="hex_editor_tab tab1">\n` +
+        `                       <a href="#hexEdtPanel${num_tabs}" title="${file_name}">${tab_name}</a>\n` +
+        '                       <span class="ui-icon ui-icon-circle-close ui-closable-tab"></span>\n' +
+        '                       </li>')
+    table_wrapper = table_wrapper_template.replace('{{}}', num_tabs)
+    $("div#panels").append(
+        `<div id="hexEdtPanel${num_tabs}" class="hexeditor_panel">${table_wrapper}</div>`
+    );
+
+    $(`div#hexEdtPanel${num_tabs}`).data('attached_file', file)
+
+    $('#tabpanel').tabs('refresh')
+    // switch to new tab;
+    $('#tabpanel').tabs("option", "active", number_of_tabs)
+
+    $(`#hexEdtTab${num_tabs} .ui-closable-tab`).click(close_tab_event_handler);
+
+}
 
 function close_tab_event_handler() {
     debugger;
@@ -174,7 +178,7 @@ function load_hex_editor(table_wrapper_id, file_content) {
         text = ""
 
         for (let i = 0; i < 100; i++) {
-            data[i] = [i*16, [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
+            data[i] = [i * 16, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
         }
     } else {
         data = file_content
@@ -185,14 +189,19 @@ function load_hex_editor(table_wrapper_id, file_content) {
         data: data,
         startIndex: 0,
         keepExisting: false,
-        generator: function(data) {
-            debugger;
+        generator: function (data) {
             offset = '<span>' + (data[0]).toString(16).padStart(8, '0') + '</span>'
             var hex = ""
             var text = ""
-            for (let i = 0; i< data[1].length; i++) {
+            for (let i = 0; i < data[1].length; i++) {
                 hex += `<span class='hex_byte'>${data[1][i].toString(16).padStart(2, '0')}</span>`
-                text += "<span class='text_byte'>.</span>"
+                if (data[1][i] > 0x20) {
+                    text += `<span class='text_byte'>${String.fromCharCode(data[1][i])}</span>`
+                } else if (data[1][i] < 0x20) {
+                    text += "<span class='text_byte'>.</span>"
+                } else {
+                    text += "<span class='text_byte'>&nbsp;</span>"
+                }
             }
             row_html = `<td>${offset}</td><td>${hex}</td><td>${text}</td>`
             return `<tr>${row_html}</tr>`;
