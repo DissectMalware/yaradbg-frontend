@@ -38,8 +38,8 @@ $(document).ready(function () {
         , east__spacing_closed: 12
     });
 
-
     $('#tabpanel').data('hex_editor_tab_counter', 0)
+
     innerLayout.center.pane
         .tabs({
             closable: true,
@@ -101,17 +101,33 @@ $(document).ready(function () {
             }
         )
         .find(".ui-tabs-nav").sortable({axis: 'x', zIndex: 2}).end()
-    $("#accordion").accordion();
 
+    $("#accordion").accordion()
 
     $("#yara_panel").bind('dragover drop dragleave', (event) => {
+        event.stopPropagation();
+        event.preventDefault();
         if (event.type == 'drop') {
             $(this).css({'backgroundColor': 'white'})
+            let files = new FormData()
+            let file = event.originalEvent.dataTransfer.files[0]
+            files.append('yarafile', file);
+            $.ajax({
+                type: "POST",
+                processData: false,
+                contentType: false,
+                url: "http://localhost:7071/api/YaraDBGHttpTrigger",
+                data: files,
+                cache: false
+            }).done(function (html) {
+                $("#yara_panel p").html(html)
+            });
         } else if (event.type == 'dragover') {
             $(this).css({'backgroundColor': 'purple'})
         } else if (event.type == 'dragleave') {
             $(this).css({'backgroundColor': 'white'})
         }
+
     });
 
 
@@ -126,7 +142,7 @@ $(document).ready(function () {
         let text_td = td.next()
         let text_span = text_td.children()[$(this).index()]
 
-        let header_offset= $(this).closest('div.ui-tabs-panel').find('table:nth-of-type(1) th:nth-child(2)')
+        let header_offset = $(this).closest('div.ui-tabs-panel').find('table:nth-of-type(1) th:nth-child(2)')
         let header_offset_span = header_offset.children()[$(this).index()]
 
         if ($(this).hasClass("active")) {
@@ -162,8 +178,8 @@ function create_new_hexeditor_tab(file) {
         '                                   </tr>\n' +
         '                               </thead>\n' +
         '                               <tbody></tbody>\n' +
-        '                           </table>'+
-    '                               <div class="tableWrapper" id="hexeditor{{}}" >\n' +
+        '                           </table>' +
+        '                               <div class="tableWrapper" id="hexeditor{{}}" >\n' +
         '                               <table class="hexEdtTable">\n' +
         '                                   <tbody></tbody>\n' +
         '                               </table>\n' +
@@ -230,6 +246,7 @@ function load_hex_editor(table_wrapper_id, file_content) {
         data: data,
         startIndex: 0,
         keepExisting: false,
+        prefetch: 20,
         generator: function (data) {
             offset = '<span>' + (data[0]).toString(16).padStart(8, '0') + '</span>'
             var hex = ""

@@ -58,11 +58,21 @@
     border: 0;
 }
 
+#panels{
+    height: calc(100% - 45px);
+    background-color: #e9e9e9;
+}
+
 
 #panels div{
     background-color: lightgray;
-    height: 90%;
+    height: calc(100% - 37px);
+    margin-left: 4px;
+    margin-right: 4px;
+    margin-top: 0px;
 }
+
+
 
 .offset, .hex, .text {
     contain: content;
