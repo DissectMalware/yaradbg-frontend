@@ -144,3 +144,7 @@ span.text_byte{
     display: inline-block;
     width: 10px;
 }
+
+.tableWrapper{
+    height: 100%
+}

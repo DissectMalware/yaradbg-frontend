@@ -163,7 +163,7 @@ function create_new_hexeditor_tab(file) {
         '                               </thead>\n' +
         '                               <tbody></tbody>\n' +
         '                           </table>'+
-    '                               <div class="tableWrapper" id="hexeditor{{}}" style="height:100%;">\n' +
+    '                               <div class="tableWrapper" id="hexeditor{{}}" >\n' +
         '                               <table class="hexEdtTable">\n' +
         '                                   <tbody></tbody>\n' +
         '                               </table>\n' +
@@ -236,6 +236,7 @@ function load_hex_editor(table_wrapper_id, file_content) {
             var text = ""
             for (let i = 0; i < data[1].length; i++) {
                 hex += `<span class='hex_byte'>${data[1][i].toString(16).padStart(2, '0')}</span>`
+                debugger;
                 if (data[1][i] > 0x20) {
                     text += `<span class='text_byte'>${String.fromCharCode(data[1][i])}</span>`
                 } else if (data[1][i] < 0x20) {
