@@ -6,7 +6,7 @@ $(document).ready(function () {
         center__paneSelector: ".outer-center"
         , west__paneSelector: ".outer-west"
         , east__paneSelector: ".outer-east"
-        , west__size: 250
+        , west__size: 400
         , east__size: 125
         , spacing_open: 8 // ALL panes
         , spacing_closed: 12 // ALL panes
@@ -102,13 +102,13 @@ $(document).ready(function () {
         )
         .find(".ui-tabs-nav").sortable({axis: 'x', zIndex: 2}).end()
 
-    $("#accordion").accordion()
 
     $("#yara_panel").bind('dragover drop dragleave', (event) => {
         event.stopPropagation();
         event.preventDefault();
         if (event.type == 'drop') {
-            $(this).css({'backgroundColor': 'white'})
+            $('#yara_panel').html('<div class="spinner lds-facebook"><div></div><div></div><div></div></div>')
+            $('#sidebar_yara').css({'backgroundColor': 'white'})
             let files = new FormData()
             let file = event.originalEvent.dataTransfer.files[0]
             files.append('yarafile', file);
@@ -120,12 +120,20 @@ $(document).ready(function () {
                 data: files,
                 cache: false
             }).done(function (html) {
-                $("#yara_panel p").html(html)
+                $('#yara_panel .spinner').removeClass('lds-facebook')
+                add_yara_rules(html)
+            }).error(function (response) {
+                $('#yara_panel .spinner').removeClass('lds-facebook')
+                if (response.status == 422) {
+                    alert(response.responseText)
+                } else {
+                    alert('Unknown error')
+                }
             });
         } else if (event.type == 'dragover') {
-            $(this).css({'backgroundColor': 'purple'})
+            $('#sidebar_yara').css({'backgroundColor': 'purple'})
         } else if (event.type == 'dragleave') {
-            $(this).css({'backgroundColor': 'white'})
+            $('#sidebar_yara').css({'backgroundColor': 'white'})
         }
 
     });
@@ -167,23 +175,44 @@ $(document).ready(function () {
 
 });
 
+function add_yara_rules(rule_json) {
+    rule_file = JSON.parse(rule_json)
+    rules_html = '<ul class="yara_rules">\n'
+    Object.keys(rule_file.rules).forEach(function (key) {
+        rules_html += `<li>
+                            <span></span><span class="name">${key}</span>
+                            <span class="toggle">
+                                <label class="switch">
+                                  <input type="checkbox" checked>
+                                  <span class="slider round"></span>
+                                </label>
+                            </span>
+                       </li>`
+    });
+    rules_html += '</ul>\n'
+    $('#yara_panel').html(rules_html)
+
+
+}
+
 function create_new_hexeditor_tab(file) {
 
-    const table_wrapper_template = '<table>\n' +
-        '                               <thead>\n' +
-        '                                   <tr>\n' +
-        '                                       <th style="width:86px;"></th>\n' +
-        '                                       <th><span>00</span><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>0a</span><span>0b</span><span>0c</span><span>0d</span><span>0e</span><span>0f</span></th>\n' +
-        '                                       <th></th>\n' +
-        '                                   </tr>\n' +
-        '                               </thead>\n' +
-        '                               <tbody></tbody>\n' +
-        '                           </table>' +
-        '                               <div class="tableWrapper" id="hexeditor{{}}" >\n' +
-        '                               <table class="hexEdtTable">\n' +
-        '                                   <tbody></tbody>\n' +
-        '                               </table>\n' +
-        '                           </div>';
+    const table_wrapper_template = ({id}) =>
+        `<table>
+            <thead>
+            <tr>
+                <th style="width:86px;"></th>
+                <th><span>00</span><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>0a</span><span>0b</span><span>0c</span><span>0d</span><span>0e</span><span>0f</span></th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div class="tableWrapper" id="hexeditor${id}" >
+            <table class="hexEdtTable">
+                <tbody></tbody>
+            </table>
+        </div>`
 
     const num_tabs = $('#tabpanel').data('hex_editor_tab_counter');
     $('#tabpanel').data('hex_editor_tab_counter', num_tabs + 1)
@@ -194,11 +223,12 @@ function create_new_hexeditor_tab(file) {
     }
 
     const number_of_tabs = $('div#tabpanel ul li').size();
-    $('div#tabpanel ul').append(`<li id="hexEdtTab${num_tabs}" class="hex_editor_tab tab1">\n` +
-        `                       <a href="#hexEdtPanel${num_tabs}" title="${file_name}">${tab_name}</a>\n` +
-        '                       <span class="ui-icon ui-icon-circle-close ui-closable-tab"></span>\n' +
-        '                       </li>')
-    table_wrapper = table_wrapper_template.replace('{{}}', num_tabs)
+    $('div#tabpanel ul').append(`<li id="hexEdtTab${num_tabs}" class="hex_editor_tab tab1">
+                                    <a href="#hexEdtPanel${num_tabs}" title="${file_name}">${tab_name}</a>
+                                    <span class="ui-icon ui-icon-circle-close ui-closable-tab"></span>
+                                 </li>`)
+    debugger;
+    table_wrapper = [{'id': num_tabs}].map(table_wrapper_template).join('')
     $("div#panels").append(
         `<div id="hexEdtPanel${num_tabs}" class="hexeditor_panel">${table_wrapper}</div>`
     );

@@ -24,7 +24,7 @@
 
 .outer-west ,
 .outer-east {
-    background-color: #EEE;
+    background-color: white;
 }
 .middle-west ,
 .middle-east {
@@ -62,7 +62,6 @@
     height: calc(100% - 45px);
     background-color: #e9e9e9;
 }
-
 
 #panels div{
     background-color: lightgray;
@@ -157,4 +156,145 @@ span.text_byte{
 
 .tableWrapper{
     height: 100%
+}
+
+/* css spinner */
+.lds-facebook {
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin:0 auto;
+}
+.lds-facebook div {
+    display: inline-block;
+    position: absolute;
+    left: 8px;
+    width: 16px;
+    background: #fff;
+    animation: lds-facebook 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite;
+}
+.lds-facebook div:nth-child(1) {
+    left: 8px;
+    animation-delay: -0.24s;
+}
+.lds-facebook div:nth-child(2) {
+    left: 32px;
+    animation-delay: -0.12s;
+}
+.lds-facebook div:nth-child(3) {
+    left: 56px;
+    animation-delay: initial;
+}
+@keyframes lds-facebook {
+    0% {
+        top: 8px;
+        height: 64px;
+    }
+    50%, 100% {
+        top: 24px;
+        height: 32px;
+    }
+}
+
+#yara_panel{
+    padding: 10px;
+    background: #e9e9e9;
+    height: calc(100% - 20px);
+    word-wrap: break-word;
+    width: calc(100% - 20px);
+    overflow-y:auto;
+
+}
+
+#yara_panel ul{
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#yara_panel ul li{
+    display: flex;
+    flex-direction: row;
+    padding: 4px 12px;
+    font-family: Helvetica, Arial;
+}
+
+#yara_panel li span.name{
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    width: calc(100% - 30px);
+    user-select: none;
+}
+
+#yara_panel li:hover{
+    background-color: lightsteelblue;
+}
+
+/* toggle switch */
+/* The switch - the box around the slider */
+.yara_rules span.toggle{
+    margin-left: 10px;
+}
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 42px;
+    height: 20px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 15px;
+    width: 15px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(20px);
+    -ms-transform: translateX(20px);
+    transform: translateX(20px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
 }
