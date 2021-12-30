@@ -91,7 +91,7 @@ span{
     font-family: "Courier New", Consolas, Menlo, "PT Mono", "Liberation Mono", monospace;
 }
 
-.hex_byte{
+.td_offset span,  .hex_byte{
     padding-top: 1px;
     padding-bottom: 1px;
     padding-inline-start: 4px;
@@ -113,6 +113,11 @@ span{
     -moz-user-select: none; /* Old versions of Firefox */
     -ms-user-select: none; /* Internet Explorer/Edge */
     user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+}
+
+span.hex_byte.active, td.td_offset.active span, span.text_byte.active
+{
+    background-color: rgba(26, 13, 3, 0.26)
 }
 
 

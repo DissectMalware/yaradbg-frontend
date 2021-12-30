@@ -118,16 +118,31 @@ $(document).ready(function () {
     $(".ui-closable-tab").click(close_tab_event_handler);
 
 
+    $('#tabpanel').on("mouseenter mouseleave", "span.hex_byte", function (e) {
+        debugger;
+        $(this).toggleClass("active");
+        let text_td = $(this).closest('td').next()
+        let text_span = text_td.children()[$(this).index()]
+        $(text_span).toggleClass("active")
+        if ($(this).hasClass("active")) {
+            $(this).closest('td').prev().addClass("active");
+        } else {
+            $(this).closest('td').prev().removeClass("active");
+        }
+
+
+    })
+
+
 });
 
 function create_new_hexeditor_tab(file) {
 
     const table_wrapper_template = '<div class="tableWrapper" id="hexeditor{{}}" style="height:100%;">\n' +
-        '                               <table>\n' +
+        '                               <table class="hexEdtTable">\n' +
         '                                   <tbody></tbody>\n' +
         '                               </table>\n' +
-        '                           </div>' +
-        '                           <div class="file_name" id="filename{{}}" style="display:none;"></div>'
+        '                           </div>';
 
     const num_tabs = $('#tabpanel').data('hex_editor_tab_counter');
     $('#tabpanel').data('hex_editor_tab_counter', num_tabs + 1)
@@ -154,6 +169,7 @@ function create_new_hexeditor_tab(file) {
     $('#tabpanel').tabs("option", "active", number_of_tabs)
 
     $(`#hexEdtTab${num_tabs} .ui-closable-tab`).click(close_tab_event_handler);
+
 
 }
 
@@ -203,7 +219,7 @@ function load_hex_editor(table_wrapper_id, file_content) {
                     text += "<span class='text_byte'>&nbsp;</span>"
                 }
             }
-            row_html = `<td>${offset}</td><td>${hex}</td><td>${text}</td>`
+            row_html = `<td class="td_offset">${offset}</td><td>${hex}</td><td>${text}</td>`
             return `<tr>${row_html}</tr>`;
         }
     });
