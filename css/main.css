@@ -91,7 +91,7 @@ span{
     font-family: "Courier New", Consolas, Menlo, "PT Mono", "Liberation Mono", monospace;
 }
 
-.td_offset span,  .hex_byte{
+.td_offset span,  .hex_byte, th span{
     padding-top: 1px;
     padding-bottom: 1px;
     padding-inline-start: 4px;
@@ -106,6 +106,21 @@ span{
     width: 300px;
 }
 
+
+
+span {
+    user-select: none; /* supported by Chrome and Opera */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+}
+
+span.selected_cell{
+    background-color: #003eff;
+    color: white;
+}
+
 .noselect {
     -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */
@@ -115,11 +130,15 @@ span{
     user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
 }
 
-span.hex_byte.active, td.td_offset.active span, span.text_byte.active
+span.hex_byte.active, td.td_offset.active span, span.text_byte.active, th span.active
 {
     background-color: rgba(26, 13, 3, 0.26)
 }
 
+th span{
+    text-decoration-style: unset !important;
+    font-weight: normal;
+}
 
 span.text_byte{
     display: inline-block;

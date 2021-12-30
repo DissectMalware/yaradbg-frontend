@@ -121,17 +121,32 @@ $(document).ready(function () {
     $('#tabpanel').on("mouseenter mouseleave", "span.hex_byte", function (e) {
         debugger;
         $(this).toggleClass("active");
-        let text_td = $(this).closest('td').next()
+
+        let td = $(this).closest('td')
+        let text_td = td.next()
         let text_span = text_td.children()[$(this).index()]
-        $(text_span).toggleClass("active")
+        
+        let header_offset= $(this).closest('div.tab-panel').find('table:nth-of-type(1) th:nth-child(2)')
+        let header_offset_span = header_offset.children()[$(this).index()]
+
         if ($(this).hasClass("active")) {
-            $(this).closest('td').prev().addClass("active");
+            td.prev().addClass("active");
+            $(text_span).addClass("active")
+            $(header_offset_span).addClass("active")
         } else {
-            $(this).closest('td').prev().removeClass("active");
+            td.prev().removeClass("active");
+            $(text_span).removeClass("active")
+            $(header_offset_span).removeClass("active")
         }
-
-
     })
+
+    /*
+    $('#tabpanel').on("click", "span", function (e) {
+        debugger;
+        $('span.selected_cell').removeClass('selected_cell')
+        $(this).addClass('selected_cell')
+
+    })*/
 
 
 });
