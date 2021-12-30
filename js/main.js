@@ -125,8 +125,8 @@ $(document).ready(function () {
         let td = $(this).closest('td')
         let text_td = td.next()
         let text_span = text_td.children()[$(this).index()]
-        
-        let header_offset= $(this).closest('div.tab-panel').find('table:nth-of-type(1) th:nth-child(2)')
+
+        let header_offset= $(this).closest('div.ui-tabs-panel').find('table:nth-of-type(1) th:nth-child(2)')
         let header_offset_span = header_offset.children()[$(this).index()]
 
         if ($(this).hasClass("active")) {
@@ -153,7 +153,17 @@ $(document).ready(function () {
 
 function create_new_hexeditor_tab(file) {
 
-    const table_wrapper_template = '<div class="tableWrapper" id="hexeditor{{}}" style="height:100%;">\n' +
+    const table_wrapper_template = '<table>\n' +
+        '                               <thead>\n' +
+        '                                   <tr>\n' +
+        '                                       <th style="width:86px;"></th>\n' +
+        '                                       <th><span>00</span><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>0a</span><span>0b</span><span>0c</span><span>0d</span><span>0e</span><span>0f</span></th>\n' +
+        '                                       <th></th>\n' +
+        '                                   </tr>\n' +
+        '                               </thead>\n' +
+        '                               <tbody></tbody>\n' +
+        '                           </table>'+
+    '                               <div class="tableWrapper" id="hexeditor{{}}" style="height:100%;">\n' +
         '                               <table class="hexEdtTable">\n' +
         '                                   <tbody></tbody>\n' +
         '                               </table>\n' +
