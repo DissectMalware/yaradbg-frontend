@@ -73,7 +73,7 @@ $(document).ready(function () {
                                 var endTime = performance.now()
                                 // alert(`Read file ${endTime - startTime} milliseconds`)
 
-                                load_hex_editor(ui.newPanel.children('div')[0].id, fileByteArray)
+                                load_hex_editor(ui.newPanel.find('div.tableWrapper')[0].id, fileByteArray)
                             }
 
                         }
@@ -198,21 +198,33 @@ function add_yara_rules(rule_json) {
 function create_new_hexeditor_tab(file) {
 
     const table_wrapper_template = ({id}) =>
-        `<table>
-            <thead>
-            <tr>
-                <th style="width:86px;"></th>
-                <th><span>00</span><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>0a</span><span>0b</span><span>0c</span><span>0d</span><span>0e</span><span>0f</span></th>
-                <th></th>
-            </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <div class="tableWrapper" id="hexeditor${id}" >
-            <table class="hexEdtTable">
-                <tbody></tbody>
-            </table>
+        `
+        <div id="editorLayout${id}" class="editor_layout" style="width: 100% !important;">
+            <div class="outer-center" >
+                <div id="toolbar${id}" class="toolbar">
+                     <button id="run${id}" class="run_button">Run</button>
+                     <button id="clear${id}" class="clear_button">Clear</button>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th style="width:86px;"></th>
+                        <th><span>00</span><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>0a</span><span>0b</span><span>0c</span><span>0d</span><span>0e</span><span>0f</span></th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="tableWrapper" id="hexeditor${id}" >
+                    <table class="hexEdtTable">
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="outer-south ui-layout-south">
+            </div>
         </div>`
+
 
     const num_tabs = $('#tabpanel').data('hex_editor_tab_counter');
     $('#tabpanel').data('hex_editor_tab_counter', num_tabs + 1)
@@ -227,11 +239,18 @@ function create_new_hexeditor_tab(file) {
                                     <a href="#hexEdtPanel${num_tabs}" title="${file_name}">${tab_name}</a>
                                     <span class="ui-icon ui-icon-circle-close ui-closable-tab"></span>
                                  </li>`)
-    debugger;
+
     table_wrapper = [{'id': num_tabs}].map(table_wrapper_template).join('')
     $("div#panels").append(
         `<div id="hexEdtPanel${num_tabs}" class="hexeditor_panel">${table_wrapper}</div>`
     );
+
+    editorLayout = $(`div#editorLayout${num_tabs}`).layout({
+        center__paneSelector: ".outer-center"
+        , south__size: 150
+        , spacing_open: 8  // ALL panes
+        , spacing_closed: 8  // ALL panes
+    });
 
     $(`div#hexEdtPanel${num_tabs}`).data('attached_file', file)
 
@@ -240,6 +259,16 @@ function create_new_hexeditor_tab(file) {
     $('#tabpanel').tabs("option", "active", number_of_tabs)
 
     $(`#hexEdtTab${num_tabs} .ui-closable-tab`).click(close_tab_event_handler);
+
+    $(`#run${num_tabs}`).button({
+        "icon": "ui-icon-play",
+        "showLabel": false
+    });
+
+    $(`#clear${num_tabs}`).button({
+        "icon": "ui-icon-trash",
+        "showLabel": false
+    });
 
 
 }

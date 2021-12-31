@@ -51,6 +51,12 @@
     background: #FC3;
 }
 
+.editor_layout
+{
+    height: 100%;
+    width: 100%;
+}
+
 .outer-center ,
 .middle-center {
     /* center pane that are 'containers' for a nested layout */
@@ -61,13 +67,32 @@
 #panels{
     height: calc(100% - 45px);
     background-color: #e9e9e9;
+    display: flex;
 }
 
-#panels div{
+.hexeditor_panel{
+    width: 100%;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+}
+
+.editor_layout,.editor_layout div.ui-layout-resizer-south, .editor_layout div.outer-center, .editor_layout div.outer-south{
+     width: 100% !important;
+
+}
+
+.editor_layout .ui-layout-toggler-south{
+    left: calc(100% / 2) !important;
+}
+
+.editor_layout div.outer-center
+{
+    background-color: #e9e9e9;
+}
+
+#panels div.tableWrapper{
     background-color: lightgray;
-    height: calc(100% - 37px);
-    margin-left: 4px;
-    margin-right: 4px;
+    height: calc(100% - 97px);
     margin-top: 0px;
 }
 
