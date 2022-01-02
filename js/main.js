@@ -1,6 +1,8 @@
 var outerLayout, middleLayout, innerLayout;
+var worker = new Worker('/js/hex_exp_worker.js');
 
 $(document).ready(function () {
+
 
     outerLayout = $('body').layout({
         center__paneSelector: ".outer-center"
@@ -218,206 +220,27 @@ function match_rules(e) {
     if (typeof file != 'undefined') {
         Object.keys(rule_file.rules).forEach(function (key) {
             var rule = rule_file.rules[key]
-            result.push({rule_name:key, result:match_rule(file, rule, dbgWin)})
+            worker.postMessage({file:file, rule:rule})
+            worker.onmessage = function(event) {
+                result = event.data;
+                for(let j=0; j< result.length; j++) {
+                    dbgWin.append(`<tr >
+                                    <td>${key}</td>
+                                    <td>${result[j].string.str_name}</td>
+                                    <td>${result[j].start.toString(16)}</td>
+                                    <td>${result[j].end.toString(16)}</td>
+                                </tr>`)
+                }
+
+            };
 
         });
     }
 
-    for(let i = 0; i< result.length; i++){
-        for(let j=0; j< result[i].result.length; j++)
-        {
-            dbgWin.append(`<tr >
-                                    <td>${result[i]['rule_name']}</td>
-                                    <td>${result[i].result[j].string.str_name}</td>
-                                    <td>${result[i].result[j].start.toString(16)}</td>
-                                    <td>${result[i].result[j].end.toString(16)}</td>
-                                </tr>`)
-        }
-    }
     return result
 }
 
-function match_rule(file, rule, dbgWin) {
 
-    let rule_result = []
-    Object.keys(rule).forEach(function (key) {
-
-        if (key == 'string') {
-            let matches = null
-            let strings = rule[key]
-            for (const index in strings) {
-                let string = strings[index]
-                if (string.type == 'hex_exp_bytecode') {
-                    matches = find_all_hex_expression(file, string.val)
-                    if (matches != null) {
-                        for(let i=0; i<matches.length; i++) {
-                            rule_result.push({string:string, start: matches[i].start, end: matches[i].end})
-                        }
-                    }
-                }
-            }
-
-        }
-    });
-
-    return rule_result
-}
-
-function find_all_hex_expression(file_content, hex_bytecode) {
-    let index = 0
-    let matches = []
-    let match = null
-    start = performance.now()
-
-
-    let instructions = get_instructions(hex_bytecode)
-    let parts = []
-    let has_start_mask, has_end_mask;
-
-
-    while (index < file_content.length) {
-        match = find_hex_expression(file_content, instructions, index)
-        if (match != null) {
-            index = match.start + 1
-            matches.push(match)
-        } else {
-            break
-        }
-    }
-    end = performance.now()
-    return matches
-}
-
-function get_instructions(bytecode) {
-    let instructions = []
-    let lines = bytecode.split(';')
-    let has_start_mask = false
-    let has_end_mask = false
-    let parts = null
-
-    for (let i = 0; i < lines.length; i++) {
-        parts = lines[i].split(/[ ,]/)
-        if (parts[0] == 'b' || parts[0] == 'nb') {
-            has_start_mask = parts[1].startsWith('?')
-            has_end_mask = parts[1].endsWith('?')
-            parts[1] = parseInt(parts[1].replace('?', '0'), 16)
-            if (has_start_mask === false && has_end_mask === false) {
-                parts.push(0xff)
-            } else if (has_start_mask === true && has_end_mask === false) {
-                parts.push(0x0f)
-            } else if (has_start_mask === false && has_end_mask === true) {
-                parts.push(0xf0)
-            } else {
-                parts.push(0)
-            }
-            if (parts[0] == 'nb') {
-                parts[2] = parseInt(parts[2])
-            }
-        } else if (parts[0] == 'jmp') {
-            parts[1] = get_jmp_loc(i, parts[1])
-        } else if (parts[0] == 'split') {
-            parts[1] = get_jmp_loc(i, parts[1])
-            parts[2] = get_jmp_loc(i, parts[2])
-        }
-        instructions.push(parts)
-    }
-    return instructions
-}
-
-function find_hex_expression(file_content, instructions, start_index) {
-
-    let current_state = [{pc: 0}]
-    let next_state = []
-
-    let c_thread = null
-    let c_prgcounter = 0
-    let op = null
-    let instruction = null
-    let is_match = false
-
-    let found_match = null
-
-    for (let i = start_index; i < file_content.length; i++) {
-        for (let t = 0; t < current_state.length; t++) {
-            c_thread = current_state[t]
-            c_prgcounter = c_thread.pc
-            instruction = instructions[c_prgcounter]
-            op = instruction[0]
-            switch (op) {
-                case 'b':
-                    is_match = instruction[2] == 0 ? true : instruction[1] == (file_content[i] & instruction[2])
-                    if (is_match == false)
-                        break;
-                    next_state.push({pc: c_prgcounter + 1})
-                    break;
-                case 'nb':
-                    is_match = instruction[3] == 0 ? true : instruction[1]  == (file_content[i] & instruction[3])
-                    if (is_match == false)
-                        break;
-
-                    if (typeof c_thread.count == 'undefined') {
-                        c_thread.count = 1
-                    } else {
-                        c_thread.count += 1
-                    }
-
-                    if (c_thread.count == instruction[2]) {
-                        next_state.push({pc: c_prgcounter + 1})
-                    } else {
-                        next_state.push(c_thread)
-                    }
-                    break;
-                case 'jmp':
-                    current_state.push({pc: instruction[1]})
-                    break;
-                case 'split':
-                    current_state.push({pc: instruction[1]})
-                    current_state.push({pc: instruction[2]})
-                    break
-                case 'match':
-                    if(found_match == null)
-                        found_match = {
-                            start: start_index,
-                            end: i - 1,
-                            match: true
-                        }
-                    else{
-                        if(found_match.end < (i-1)){
-                            found_match = {
-                                start: start_index,
-                                end: i - 1,
-                                match: true
-                            }
-                        }
-                    }
-
-            }
-        }
-
-        if (next_state.length == 0) {
-            if(found_match != null){
-                return found_match
-            }
-            current_state = [{pc: 0}]
-            start_index = i + 1
-        } else {
-            current_state = next_state
-            next_state = []
-        }
-    }
-    return null
-}
-
-
-function get_jmp_loc(current_loc, jump_addr) {
-    let final_add = jump_addr
-    if (jump_addr.startsWith('[')) {
-        final_add = jump_addr.substr(1, jump_addr.length - 2)
-        final_add = parseInt(final_add) + current_loc
-    } else
-        final_add = parseInt(final_add)
-    return final_add
-}
 
 
 function create_new_hexeditor_tab(file) {
