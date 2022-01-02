@@ -204,10 +204,11 @@ function add_yara_rules(rule_json) {
 
 function match_rules(e) {
 
+    let result = []
     let rule_file = $('#yara_panel').data('rules')
     if (typeof rule_file == 'undefined') {
         alert('Please drop a yara file on the left panel first!')
-        return;
+        return null;
     }
     let hex_editor = e.target.closest('div.hexeditor_panel')
     let dbgWin = $(this).closest('div.editor_layout').find('table.debugWin')
@@ -217,13 +218,28 @@ function match_rules(e) {
     if (typeof file != 'undefined') {
         Object.keys(rule_file.rules).forEach(function (key) {
             var rule = rule_file.rules[key]
-            match_rule(file, rule, dbgWin)
+            result.push({rule_name:key, result:match_rule(file, rule, dbgWin)})
+
         });
     }
+
+    for(let i = 0; i< result.length; i++){
+        for(let j=0; j< result[i].result.length; j++)
+        {
+            dbgWin.append(`<tr >
+                                    <td>${result[i]['rule_name']}</td>
+                                    <td>${result[i].result[j].string.str_name}</td>
+                                    <td>${result[i].result[j].start.toString(16)}</td>
+                                    <td>${result[i].result[j].end.toString(16)}</td>
+                                </tr>`)
+        }
+    }
+    return result
 }
 
 function match_rule(file, rule, dbgWin) {
 
+    let rule_result = []
     Object.keys(rule).forEach(function (key) {
 
         if (key == 'string') {
@@ -235,12 +251,7 @@ function match_rule(file, rule, dbgWin) {
                     matches = find_all_hex_expression(file, string.val)
                     if (matches != null) {
                         for(let i=0; i<matches.length; i++) {
-                            dbgWin.append(`
-                                <tr>
-                                    <td>${string.str_name}</td>
-                                    <td>${matches[i].start.toString(16)}</td>
-                                    <td>${matches[i].end.toString(16)}</td>
-                                </tr>`)
+                            rule_result.push({string:string, start: matches[i].start, end: matches[i].end})
                         }
                     }
                 }
@@ -248,6 +259,8 @@ function match_rule(file, rule, dbgWin) {
 
         }
     });
+
+    return rule_result
 }
 
 function find_all_hex_expression(file_content, hex_bytecode) {
@@ -264,8 +277,8 @@ function find_all_hex_expression(file_content, hex_bytecode) {
 
     while (index < file_content.length) {
         match = find_hex_expression(file_content, instructions, index)
-        if (match !== null) {
-            index = match.end + 1
+        if (match != null) {
+            index = match.start + 1
             matches.push(match)
         } else {
             break
