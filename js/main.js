@@ -52,8 +52,11 @@ $(document).ready(function () {
                         var startTime = performance.now()
                         reader.onloadend = (evt) => {
                             if (evt.target.readyState == FileReader.DONE) {
+
                                 let arrayBuffer = evt.target.result,
                                     array = new Uint8Array(arrayBuffer);
+
+                                ui.newPanel.data('file_content', array)
 
                                 let fileByteArray = new Proxy(array, {
                                     get: (original, key) => {
@@ -107,7 +110,7 @@ $(document).ready(function () {
         event.stopPropagation();
         event.preventDefault();
         if (event.type == 'drop') {
-            $('#yara_panel').html('<div class="spinner lds-facebook"><div></div><div></div><div></div></div>')
+
             $('#sidebar_yara').css({'backgroundColor': 'white'})
             let files = new FormData()
             let file = event.originalEvent.dataTransfer.files[0]
@@ -130,6 +133,7 @@ $(document).ready(function () {
                     alert('Unknown error')
                 }
             });
+            $('#yara_panel').html('<div class="spinner lds-facebook"><div></div><div></div><div></div></div>')
         } else if (event.type == 'dragover') {
             $('#sidebar_yara').css({'backgroundColor': 'purple'})
         } else if (event.type == 'dragleave') {
@@ -176,24 +180,216 @@ $(document).ready(function () {
 });
 
 function add_yara_rules(rule_json) {
-    rule_file = JSON.parse(rule_json)
-    rules_html = '<ul class="yara_rules">\n'
+    let rule_file = JSON.parse(rule_json)
+    let rules_html = ''
     Object.keys(rule_file.rules).forEach(function (key) {
-        rules_html += `<li>
-                            <span></span><span class="name">${key}</span>
-                            <span class="toggle">
-                                <label class="switch">
-                                  <input type="checkbox" checked>
-                                  <span class="slider round"></span>
-                                </label>
-                            </span>
-                       </li>`
+        rules_html += `
+            <li>
+                <span></span><span class="name">${key}</span>
+                <span class="toggle">
+                    <label class="switch">
+                      <input type="checkbox" checked>
+                      <span class="slider round"></span>
+                    </label>
+                </span>
+           </li>`
     });
-    rules_html += '</ul>\n'
+    rules_html = `<ul class="yara_rules">
+                    ${rules_html}
+                  </ul>`
     $('#yara_panel').html(rules_html)
-
-
+    $('#yara_panel').data('rules', rule_file)
 }
+
+
+function match_rules(e) {
+
+    let rule_file = $('#yara_panel').data('rules')
+    if (typeof rule_file == 'undefined') {
+        alert('Please drop a yara file on the left panel first!')
+        return;
+    }
+    let hex_editor = e.target.closest('div.hexeditor_panel')
+    let dbgWin = $(this).closest('div.editor_layout').find('table.debugWin')
+
+    var file = $(hex_editor).data('file_content')
+
+    if (typeof file != 'undefined') {
+        Object.keys(rule_file.rules).forEach(function (key) {
+            var rule = rule_file.rules[key]
+            match_rule(file, rule, dbgWin)
+        });
+    }
+}
+
+function match_rule(file, rule, dbgWin) {
+
+    Object.keys(rule).forEach(function (key) {
+
+        if (key == 'string') {
+            let matches = null
+            let strings = rule[key]
+            for (const index in strings) {
+                let string = strings[index]
+                if (string.type == 'hex_exp_bytecode') {
+                    matches = find_all_hex_expression(file, string.val)
+                    if (matches != null) {
+                        for(let i=0; i<matches.length; i++) {
+                            dbgWin.append(`
+                                <tr>
+                                    <td>${string.str_name}</td>
+                                    <td>${matches[i].start.toString(16)}</td>
+                                    <td>${matches[i].end.toString(16)}</td>
+                                </tr>`)
+                        }
+                    }
+                }
+            }
+
+        }
+    });
+}
+
+function find_all_hex_expression(file_content, hex_bytecode) {
+    let index = 0
+    let matches = []
+    let match = null
+    start = performance.now()
+
+
+    let instructions = get_instructions(hex_bytecode)
+    let parts = []
+    let has_start_mask, has_end_mask;
+
+
+    while (index < file_content.length) {
+        match = find_hex_expression(file_content, instructions, index)
+        if (match !== null) {
+            index = match.end + 1
+            matches.push(match)
+        } else {
+            break
+        }
+    }
+    end = performance.now()
+    return matches
+}
+
+function get_instructions(bytecode) {
+    let instructions = []
+    let lines = bytecode.split(';')
+    let has_start_mask = false
+    let has_end_mask = false
+    let parts = null
+
+    for (let i = 0; i < lines.length; i++) {
+        parts = lines[i].split(/[ ,]/)
+        if (parts[0] == 'b' || parts[0] == 'nb') {
+            has_start_mask = parts[1].startsWith('?')
+            has_end_mask = parts[1].endsWith('?')
+            parts[1] = parseInt(parts[1].replace('?', '0'), 16)
+            if (has_start_mask === false && has_end_mask === false) {
+                parts.push(0xff)
+            } else if (has_start_mask === true && has_end_mask === false) {
+                parts.push(0x0f)
+            } else if (has_start_mask === false && has_end_mask === true) {
+                parts.push(0xf0)
+            } else {
+                parts.push(0)
+            }
+            if (parts[0] == 'nb') {
+                parts[2] = parseInt(parts[2])
+            }
+        } else if (parts[0] == 'jmp') {
+            parts[1] = get_jmp_loc(i, parts[1])
+        } else if (parts[0] == 'split') {
+            parts[1] = get_jmp_loc(i, parts[1])
+            parts[2] = get_jmp_loc(i, parts[2])
+        }
+        instructions.push(parts)
+    }
+    return instructions
+}
+
+function find_hex_expression(file_content, instructions, start_index) {
+
+    let current_state = [{pc: 0}]
+    let next_state = []
+
+    let c_thread = null
+    let c_prgcounter = 0
+    let op = null
+    let instruction = null
+    let is_match = false
+
+    for (let i = start_index; i < file_content.length; i++) {
+        for (let t = 0; t < current_state.length; t++) {
+            c_thread = current_state[t]
+            c_prgcounter = c_thread.pc
+            instruction = instructions[c_prgcounter]
+            op = instruction[0]
+            switch (op) {
+                case 'b':
+                    is_match = instruction[2] == 0 ? true : instruction[1] == (file_content[i] & instruction[2])
+                    if (is_match == false)
+                        break;
+                    next_state.push({pc: c_prgcounter + 1})
+                    break;
+                case 'nb':
+                    is_match = instruction[3] == 0 ? true : instruction[1]  == (file_content[i] & instruction[3])
+                    if (is_match == false)
+                        break;
+
+                    if (typeof c_thread.count == 'undefined') {
+                        c_thread.count = 1
+                    } else {
+                        c_thread.count += 1
+                    }
+
+                    if (c_thread.count == instruction[2]) {
+                        next_state.push({pc: c_prgcounter + 1})
+                    } else {
+                        next_state.push(c_thread)
+                    }
+                    break;
+                case 'jmp':
+                    current_state.push({pc: instruction[1]})
+                    break;
+                case 'split':
+                    current_state.push({pc: instruction[1]})
+                    current_state.push({pc: instruction[2]})
+                    break
+                case 'match':
+                    return {
+                        start: start_index,
+                        end: i - 1,
+                        match: true
+                    }
+            }
+        }
+
+        if (next_state.length == 0) {
+            current_state = [{pc: 0}]
+            start_index = i + 1
+        } else {
+            current_state = next_state
+            next_state = []
+        }
+    }
+    return null
+}
+
+
+function get_jmp_loc(current_loc, jump_addr) {
+    let final_add = jump_addr
+    if (jump_addr.startsWith('[')) {
+        final_add = jump_addr.substr(1, jump_addr.length - 2)
+        final_add = parseInt(final_add) + current_loc
+    } else
+        final_add = parseInt(final_add)
+    return final_add
+}
+
 
 function create_new_hexeditor_tab(file) {
 
@@ -222,6 +418,9 @@ function create_new_hexeditor_tab(file) {
                 </div>
             </div>
             <div class="outer-south ui-layout-south">
+                    <table class="debugWin">
+                        
+                    </table>
             </div>
         </div>`
 
@@ -240,12 +439,12 @@ function create_new_hexeditor_tab(file) {
                                     <span class="ui-icon ui-icon-circle-close ui-closable-tab"></span>
                                  </li>`)
 
-    table_wrapper = [{'id': num_tabs}].map(table_wrapper_template).join('')
+    let table_wrapper = [{'id': num_tabs}].map(table_wrapper_template).join('')
     $("div#panels").append(
         `<div id="hexEdtPanel${num_tabs}" class="hexeditor_panel">${table_wrapper}</div>`
     );
 
-    editorLayout = $(`div#editorLayout${num_tabs}`).layout({
+    let editorLayout = $(`div#editorLayout${num_tabs}`).layout({
         center__paneSelector: ".outer-center"
         , south__size: 150
         , spacing_open: 8  // ALL panes
@@ -263,7 +462,7 @@ function create_new_hexeditor_tab(file) {
     $(`#run${num_tabs}`).button({
         "icon": "ui-icon-play",
         "showLabel": false
-    });
+    }).bind("click", match_rules);
 
     $(`#clear${num_tabs}`).button({
         "icon": "ui-icon-trash",
@@ -272,6 +471,7 @@ function create_new_hexeditor_tab(file) {
 
 
 }
+
 
 function close_tab_event_handler() {
     debugger;

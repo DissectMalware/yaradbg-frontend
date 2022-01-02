@@ -76,8 +76,14 @@
     padding-right: 4px !important;
 }
 
-.editor_layout,.editor_layout div.ui-layout-resizer-south, .editor_layout div.outer-center, .editor_layout div.outer-south{
+.editor_layout,.editor_layout div.ui-layout-resizer-south, .editor_layout div.outer-center{
      width: 100% !important;
+
+}
+
+.editor_layout div.outer-south{
+    width: calc(100% - 23px) !important;
+    overflow-y: auto;
 
 }
 
@@ -231,6 +237,7 @@ span.text_byte{
     overflow-y:auto;
 
 }
+
 
 #yara_panel ul{
     list-style-type: none;
