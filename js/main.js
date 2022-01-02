@@ -335,6 +335,8 @@ function find_hex_expression(file_content, instructions, start_index) {
     let instruction = null
     let is_match = false
 
+    let found_match = null
+
     for (let i = start_index; i < file_content.length; i++) {
         for (let t = 0; t < current_state.length; t++) {
             c_thread = current_state[t]
@@ -373,15 +375,29 @@ function find_hex_expression(file_content, instructions, start_index) {
                     current_state.push({pc: instruction[2]})
                     break
                 case 'match':
-                    return {
-                        start: start_index,
-                        end: i - 1,
-                        match: true
+                    if(found_match == null)
+                        found_match = {
+                            start: start_index,
+                            end: i - 1,
+                            match: true
+                        }
+                    else{
+                        if(found_match.end < (i-1)){
+                            found_match = {
+                                start: start_index,
+                                end: i - 1,
+                                match: true
+                            }
+                        }
                     }
+
             }
         }
 
         if (next_state.length == 0) {
+            if(found_match != null){
+                return found_match
+            }
             current_state = [{pc: 0}]
             start_index = i + 1
         } else {
