@@ -214,6 +214,7 @@ function match_rules(e) {
     }
     let hex_editor = e.target.closest('div.hexeditor_panel')
     let dbgWin = $(this).closest('div.editor_layout').find('table.debugWin')
+    var scroll = $(this).closest('.outer-center').find('.tableWrapper')
 
     var file = $(hex_editor).data('file_content')
 
@@ -222,15 +223,22 @@ function match_rules(e) {
             var rule = rule_file.rules[key]
             worker.postMessage({file:file, rule:rule})
             worker.onmessage = function(event) {
+                dbgWin.html("")
                 result = event.data;
                 for(let j=0; j< result.length; j++) {
-                    dbgWin.append(`<tr >
-                                    <td>${key}</td>
-                                    <td>${result[j].string.str_name}</td>
-                                    <td>${result[j].start.toString(16)}</td>
-                                    <td>${result[j].end.toString(16)}</td>
-                                </tr>`)
+                    dbgWin.append(`
+                        <tr >
+                            <td class="rule_name">${key}</td>
+                            <td class="str_name">${result[j].string.str_name}</td>
+                            <td class="start_addr">${result[j].start.toString(16)}</td>
+                            <td class="end_addr">${result[j].end.toString(16)}</td>
+                            <td class="match">${file.slice(result[j].start, result[j].end+1)}</td>
+                        </tr>`)
                 }
+                $(dbgWin).find('td.start_addr, td.end_addr').bind('click', function (e){
+                    debugger;
+                    jump_to_addr(scroll,parseInt($(e.target).html(), 16))
+                })
 
             };
 
@@ -270,7 +278,7 @@ function create_new_hexeditor_tab(file) {
                 </div>
             </div>
             <div class="outer-south ui-layout-south">
-                    <table class="debugWin">
+                    <table id="debugWin${id}" class="debugWin">
                         
                     </table>
             </div>
@@ -322,6 +330,7 @@ function create_new_hexeditor_tab(file) {
     });
 
 
+
 }
 
 
@@ -358,6 +367,7 @@ function load_hex_editor(table_wrapper_id, file_content) {
         startIndex: 0,
         keepExisting: false,
         prefetch: 20,
+        trHeight: 23,
         generator: function (data) {
             offset = '<span>' + (data[0]).toString(16).padStart(8, '0') + '</span>'
             var hex = ""
@@ -381,9 +391,9 @@ function load_hex_editor(table_wrapper_id, file_content) {
 }
 
 function jump_to_addr(scroll_obj, address) {
-    const height = 20
+    const height = 22.5
     const number_of_bytes_per_row = 16
-    var scroll_position = parseInt(address / number_of_bytes_per_row) * height - 23
+    var scroll_position = (Math.floor(address / number_of_bytes_per_row)+1)* height
 
     scroll_position = Math.max(scroll_position, 0)
     scroll_position = Math.min(scroll_position, scroll_obj[0].scrollHeight)
