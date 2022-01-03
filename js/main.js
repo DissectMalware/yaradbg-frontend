@@ -2,7 +2,7 @@ var outerLayout, middleLayout, innerLayout;
 var worker = new Worker('/js/hex_exp_worker.js');
 
 $(document).ready(function () {
-
+    $('html').show();
 
     outerLayout = $('body').layout({
         center__paneSelector: ".outer-center"
