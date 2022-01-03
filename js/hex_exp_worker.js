@@ -9,64 +9,74 @@ function match_rule(file, rule) {
     Object.keys(rule).forEach(function (key) {
 
         if (key == 'string') {
-            let matches = null
-            let strings = rule[key]
-            for (const index in strings) {
-                let string = strings[index]
-                debugger
-                if (string.type == 'hex_exp_bytecode') {
-                    matches = find_all_hex_expression(file, string.val)
-                    if (matches != null) {
-                        for (let i = 0; i < matches.length; i++) {
-                            rule_result.push({string: string, start: matches[i].start, end: matches[i].end})
-                        }
-                    }
-                }
-                else if(string.type == 'literal_string'){
-                    debugger;
-                    let nocase=false,
-                        ascii=false,
-                        wide=false;
-                    for(let i=0; i<string.modifiers.length; i++) {
-                        switch (string.modifiers[i].modifier)
-                        {
-                            case 'nocase':
-                                nocase = true;
-                                break
-                            case 'ascii':
-                                ascii = true;
-                                break
-                            case 'wide':
-                                wide = true;
-                        }
-                    }
-                    if(wide == false)
-                        ascii = true
-
-                    let bytecode = ''
-                    string.val =  string.val.substr(1, string.val.length -2)
-
-
-                    for(let i=0; i< string.val.length; i++)
-                    {
-                        bytecode += `b ${string.val.charCodeAt(i).toString(16)};`
-                    }
-                    bytecode += 'match;'
-
-                    matches = find_all_hex_expression(file, bytecode)
-                    if (matches != null) {
-                        for (let i = 0; i < matches.length; i++) {
-                            rule_result.push({string: string, start: matches[i].start, end: matches[i].end})
-                        }
-                    }
-                }
-
-            }
-
+            let matches = match_strings(rule[key])
+        }
+        else if(key == 'condition')
+        {
+            let eval_step_res = eval_condition(rule[key])
         }
     });
 
     return rule_result
+}
+
+function eval_condition(condition)
+{
+    debugger;
+}
+
+function match_strings(strings) {
+
+    let matches = null
+    for (const index in strings) {
+        let string = strings[index]
+        debugger
+        if (string.type == 'hex_exp_bytecode') {
+            matches = find_all_hex_expression(file, string.val)
+            if (matches != null) {
+                for (let i = 0; i < matches.length; i++) {
+                    rule_result.push({string: string, start: matches[i].start, end: matches[i].end})
+                }
+            }
+        } else if (string.type == 'literal_string') {
+            debugger;
+            let nocase = false,
+                ascii = false,
+                wide = false;
+            for (let i = 0; i < string.modifiers.length; i++) {
+                switch (string.modifiers[i].modifier) {
+                    case 'nocase':
+                        nocase = true;
+                        break
+                    case 'ascii':
+                        ascii = true;
+                        break
+                    case 'wide':
+                        wide = true;
+                }
+            }
+            if (wide == false)
+                ascii = true
+
+            let bytecode = ''
+            string.val = string.val.substr(1, string.val.length - 2)
+
+
+            for (let i = 0; i < string.val.length; i++) {
+                bytecode += `b ${string.val.charCodeAt(i).toString(16)};`
+            }
+            bytecode += 'match;'
+
+            matches = find_all_hex_expression(file, bytecode)
+            if (matches != null) {
+                for (let i = 0; i < matches.length; i++) {
+                    rule_result.push({string: string, start: matches[i].start, end: matches[i].end})
+                }
+            }
+        }
+    }
+
+    return matches
 }
 
 function find_all_hex_expression(file_content, hex_bytecode) {
@@ -128,7 +138,7 @@ function get_instructions(bytecode) {
         } else if (parts[0] == 'split') {
             parts[1] = get_jmp_loc(i, parts[1])
             parts[2] = get_jmp_loc(i, parts[2])
-        }else if (parts[0] == 'ignore'){
+        } else if (parts[0] == 'ignore') {
             parts[1] = parseInt(parts[1])
             parts[2] = parseInt(parts[2])
         }
@@ -163,8 +173,7 @@ function find_hex_expression(file_content, instructions, start_index) {
                     if (is_match == false) {
                         if (ignore_stack.length == 0) {
                             break;
-                        }
-                        else {
+                        } else {
                             ignore = ignore_stack.pop()
                             i = ignore.end
                             c_prgcounter = ignore.ignore_loc
@@ -179,7 +188,11 @@ function find_hex_expression(file_content, instructions, start_index) {
                 case 'ignore':
                     if (instruction[2] == -1)
                         instruction[2] = file_content.length
-                    ignore_stack.push({start: i+instruction[1] - 1, end: i+instruction[2]-1, ignore_loc: c_prgcounter})
+                    ignore_stack.push({
+                        start: i + instruction[1] - 1,
+                        end: i + instruction[2] - 1,
+                        ignore_loc: c_prgcounter
+                    })
                     i = i + instruction[1] - 1
                     next_state.push(c_prgcounter + 1)
                     break
