@@ -95,6 +95,10 @@ $(document).ready(function () {
                 if (event.type == 'drop') {
                     for (let i = 0; i < event.originalEvent.dataTransfer.files.length; i++) {
                         file = event.originalEvent.dataTransfer.files[i]
+                        if(file.size > 20*1024*1024) {
+                            alert(`${file.name} is too big (>20MB)`)
+                            continue;
+                        }
                         create_new_hexeditor_tab(file)
                     }
                     $('#tabpanel').css({'backgroundColor': 'white'})
@@ -225,14 +229,27 @@ function match_rules(e) {
             worker.onmessage = function(event) {
                 dbgWin.html("")
                 result = event.data;
+
+                let matched_entity = null
                 for(let j=0; j< result.length; j++) {
+                    if(result[j].string.type == 'hex_exp_bytecode') {
+                        matched_entity = []
+                        for (let i = result[j].start; i <=  result[j].end; i++) {
+                            matched_entity.push(file[i].toString(16))
+                        }
+                        matched_entity = matched_entity.join(' ')
+                    }
+                    else if(result[j].string.type == 'literal_string'){
+                        matched_entity = String.fromCharCode(...file.slice(result[j].start, result[j].end + 1))
+
+                    }
                     dbgWin.append(`
                         <tr >
                             <td class="rule_name">${key}</td>
                             <td class="str_name">${result[j].string.str_name}</td>
                             <td class="start_addr">${result[j].start.toString(16)}</td>
                             <td class="end_addr">${result[j].end.toString(16)}</td>
-                            <td class="match">${file.slice(result[j].start, result[j].end+1)}</td>
+                            <td class="match">${matched_entity}</td>
                         </tr>`)
                 }
                 $(dbgWin).find('td.start_addr, td.end_addr').bind('click', function (e){
