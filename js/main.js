@@ -125,7 +125,7 @@ $(document).ready(function () {
                 type: "POST",
                 processData: false,
                 contentType: false,
-                url: "http://localhost:7071/api/yaraparser",
+                url: "https://yaradbg.azurewebsites.net/api/yaraparser",
                 data: files,
                 cache: false
             }).done(function (html) {
