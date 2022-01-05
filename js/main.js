@@ -231,26 +231,31 @@ function match_rules(e) {
                 result = event.data;
 
                 let matched_entity = null
-                for(let j=0; j< result.length; j++) {
-                    if(result[j].string.type == 'hex_exp_bytecode') {
-                        matched_entity = []
-                        for (let i = result[j].start; i <=  result[j].end; i++) {
-                            matched_entity.push(file[i].toString(16))
+                debugger;
+                for(let entry of result.strings) {
+                    let matched_string = entry[1]
+                    for(let j = 0; j<matched_string.length; j++) {
+                        if (matched_string[j].string.type == 'hex_exp_bytecode') {
+                            matched_entity = []
+                            for (let i = matched_string[j].start; i <= matched_string[j].end; i++) {
+                                matched_entity.push(file[i].toString(16))
+                            }
+                            matched_entity = matched_entity.join(' ')
+                        } else if (matched_string[j].string.type == 'literal_string') {
+                            matched_entity = String.fromCharCode(...file.slice(matched_string[j].start,
+                                                                                matched_string[j].end + 1))
                         }
-                        matched_entity = matched_entity.join(' ')
-                    }
-                    else if(result[j].string.type == 'literal_string'){
-                        matched_entity = String.fromCharCode(...file.slice(result[j].start, result[j].end + 1))
-
-                    }
-                    dbgWin.append(`
+                        dbgWin.append(`
                         <tr >
                             <td class="rule_name">${key}</td>
-                            <td class="str_name">${result[j].string.str_name}</td>
-                            <td class="start_addr">${result[j].start.toString(16)}</td>
-                            <td class="end_addr">${result[j].end.toString(16)}</td>
+                            <td class="str_name">${matched_string[j].string.str_name}</td>
+                            <td class="start_addr">${matched_string[j].start.toString(16)}</td>
+                            <td class="end_addr">${matched_string[j].end.toString(16)}</td>
                             <td class="match">${matched_entity}</td>
                         </tr>`)
+                    }
+
+
                 }
                 $(dbgWin).find('td.start_addr, td.end_addr').bind('click', function (e){
                     debugger;
