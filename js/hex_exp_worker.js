@@ -9,7 +9,7 @@ function match_rule(file, rule) {
     Object.keys(rule).forEach(function (key) {
 
         if (key == 'string') {
-            let matches = match_strings(rule[key])
+            match_strings(rule[key], file, rule_result)
         }
         else if(key == 'condition')
         {
@@ -25,7 +25,7 @@ function eval_condition(condition)
     debugger;
 }
 
-function match_strings(strings) {
+function match_strings(strings, file, rule_result) {
 
     let matches = null
     for (const index in strings) {
