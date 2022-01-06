@@ -16,7 +16,7 @@ function match_rule(file, rule) {
         }
         else if(key == 'condition')
         {
-            eval_condition(rule[key], evaluated_rule)
+            eval_condition(file, rule[key], evaluated_rule)
         }
     });
 

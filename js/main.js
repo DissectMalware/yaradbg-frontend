@@ -335,9 +335,8 @@ function create_new_hexeditor_tab(file) {
 
     $(`div#hexEdtPanel${num_tabs}`).data('attached_file', file)
 
-    $('#tabpanel').tabs('refresh')
-    // switch to new tab;
-    $('#tabpanel').tabs("option", "active", number_of_tabs)
+    // refresh and switch to new tab;
+    $('#tabpanel').tabs('refresh').tabs("option", "active", number_of_tabs)
 
     $(`#hexEdtTab${num_tabs} .ui-closable-tab`).click(close_tab_event_handler);
 
