@@ -1,5 +1,6 @@
 var outerLayout, middleLayout, innerLayout;
 var worker = new Worker('/js/hex_exp_worker.js');
+const COL_COUNT = 16
 
 $(document).ready(function () {
     $('html').show();
@@ -78,7 +79,9 @@ $(document).ready(function () {
                                 var endTime = performance.now()
                                 // alert(`Read file ${endTime - startTime} milliseconds`)
 
-                                load_hex_editor(ui.newPanel.find('div.tableWrapper')[0].id, fileByteArray)
+                                var table = load_hex_editor(ui.newPanel.find('div.tableWrapper')[0].id, fileByteArray)
+
+                                ui.newPanel.data('hexEditorTable', table)
                             }
 
                         }
@@ -95,7 +98,7 @@ $(document).ready(function () {
                 if (event.type == 'drop') {
                     for (let i = 0; i < event.originalEvent.dataTransfer.files.length; i++) {
                         file = event.originalEvent.dataTransfer.files[i]
-                        if(file.size > 20*1024*1024) {
+                        if (file.size > 20 * 1024 * 1024) {
                             alert(`${file.name} is too big (>20MB)`)
                             continue;
                         }
@@ -225,25 +228,26 @@ function match_rules(e) {
     if (typeof file != 'undefined') {
         Object.keys(rule_file.rules).forEach(function (key) {
             var rule = rule_file.rules[key]
-            worker.postMessage({file:file, rule:rule})
-            worker.onmessage = function(event) {
+            worker.postMessage({file: file, rule: rule})
+            worker.onmessage = function (event) {
                 dbgWin.html("")
                 result = event.data;
 
                 let matched_entity = null
+
                 debugger;
-                for(let entry of result.strings) {
+                for (let entry of result.strings) {
                     let matched_string = entry[1]
-                    for(let j = 0; j<matched_string.length; j++) {
-                        if (matched_string[j].string.type == 'hex_exp_bytecode') {
+                    for (let j = 0; j < matched_string.length; j++) {
+                        if (matched_string[j].string.type === 'hex_exp_bytecode') {
                             matched_entity = []
                             for (let i = matched_string[j].start; i <= matched_string[j].end; i++) {
                                 matched_entity.push(file[i].toString(16))
                             }
                             matched_entity = matched_entity.join(' ')
-                        } else if (matched_string[j].string.type == 'literal_string') {
+                        } else if (matched_string[j].string.type === 'literal_string') {
                             matched_entity = String.fromCharCode(...file.slice(matched_string[j].start,
-                                                                                matched_string[j].end + 1))
+                                matched_string[j].end + 1))
                         }
                         dbgWin.append(`
                         <tr >
@@ -253,13 +257,21 @@ function match_rules(e) {
                             <td class="end_addr">${matched_string[j].end.toString(16)}</td>
                             <td class="match">${matched_entity}</td>
                         </tr>`)
+
+                        debugger;
+                        add_hex_marker(hex_editor, matched_string[j].start, matched_string[j].end)
+
+                        scroll.scrollTop(scroll.scrollTop()+1)
+
+
                     }
 
 
                 }
-                $(dbgWin).find('td.start_addr, td.end_addr').bind('click', function (e){
+
+                $(dbgWin).find('td.start_addr, td.end_addr').bind('click', function (e) {
                     debugger;
-                    jump_to_addr(scroll,parseInt($(e.target).html(), 16))
+                    jump_to_addr(scroll, parseInt($(e.target).html(), 16))
                 })
 
             };
@@ -271,7 +283,54 @@ function match_rules(e) {
 }
 
 
+function get_row_id(offset) {
+    if (typeof offset != "number") {
+        offset = parseInt(offset)
+    }
+    return Math.floor(offset / COL_COUNT)
+}
 
+function add_hex_marker(hex_editor, start_offset, end_offset) {
+
+    let markers = $(hex_editor).data('markers')
+    if (typeof markers === 'undefined') {
+        $(hex_editor).data('markers', new Map())
+        markers = $(hex_editor).data('markers')
+    }
+
+    let row_id_start = get_row_id(start_offset)
+    let row_id_end = get_row_id(end_offset)
+    let row_markers = null
+
+    for (let row_id = row_id_start; row_id <= row_id_end; row_id++) {
+        row_markers = markers.get(row_id)
+        if (typeof row_markers === 'undefined') {
+            markers.set(row_id, [])
+            row_markers = markers.get(row_id)
+        }
+        if (row_id_start === row_id_end) {
+            row_markers.push({
+                start: start_offset % COL_COUNT,
+                end: end_offset % COL_COUNT
+            })
+        } else if (row_id === row_id_start) {
+            row_markers.push({
+                start: start_offset % COL_COUNT,
+                end: COL_COUNT - 1
+            })
+        } else if (row_id === row_id_end) {
+            row_markers.push({
+                start: 0,
+                end: end_offset % COL_COUNT
+            })
+        } else {
+            row_markers.push({
+                start: 0,
+                end: COL_COUNT - 1
+            })
+        }
+    }
+}
 
 function create_new_hexeditor_tab(file) {
 
@@ -351,7 +410,6 @@ function create_new_hexeditor_tab(file) {
     });
 
 
-
 }
 
 
@@ -383,6 +441,8 @@ function load_hex_editor(table_wrapper_id, file_content) {
 
     }
 
+
+
     var table = $('#' + table_wrapper_id).LazyTable({
         data: data,
         startIndex: 0,
@@ -390,31 +450,47 @@ function load_hex_editor(table_wrapper_id, file_content) {
         prefetch: 20,
         trHeight: 23,
         generator: function (data) {
-            offset = '<span>' + (data[0]).toString(16).padStart(8, '0') + '</span>'
+            let markers = $('#' + table_wrapper_id).closest('div.hexeditor_panel').data('markers')
+            let offset = '<span>' + (data[0]).toString(16).padStart(8, '0') + '</span>'
             var hex = ""
             var text = ""
+            let row_marker = []
+            let color_class = ""
+            if(typeof markers !=='undefined')
+                row_marker = markers.get(get_row_id(data[0]))
+
             for (let i = 0; i < data[1].length; i++) {
-                hex += `<span class='hex_byte'>${data[1][i].toString(16).padStart(2, '0')}</span>`
-                debugger;
+                color_class = ""
+                if(typeof row_marker !=='undefined' && row_marker.length>0) {
+                    debugger;
+                    for (let j = 0; j < row_marker.length; j++) {
+                        if (i >= row_marker[j]['start'] && i <= row_marker[j]['end']) {
+                            color_class = "colored"
+                            break
+                        }
+                    }
+                }
+                hex += `<span class='hex_byte ${color_class}'>${data[1][i].toString(16).padStart(2, '0')}</span>`
                 if (data[1][i] > 0x20) {
-                    text += `<span class='text_byte'>${String.fromCharCode(data[1][i])}</span>`
+                    text += `<span class='text_byte ${color_class}'>${String.fromCharCode(data[1][i])}</span>`
                 } else if (data[1][i] < 0x20) {
-                    text += "<span class='text_byte'>.</span>"
+                    text += `<span class='text_byte ${color_class}'>.</span>`
                 } else {
-                    text += "<span class='text_byte'>&nbsp;</span>"
+                    text += `<span class='text_byte ${color_class}'>&nbsp;</span>`
                 }
             }
-            row_html = `<td class="td_offset">${offset}</td><td>${hex}</td><td>${text}</td>`
+            let row_html = `<td class="td_offset">${offset}</td><td>${hex}</td><td>${text}</td>`
             return `<tr>${row_html}</tr>`;
         }
     });
 
+    return table
 }
 
 function jump_to_addr(scroll_obj, address) {
     const height = 22.5
     const number_of_bytes_per_row = 16
-    var scroll_position = (Math.floor(address / number_of_bytes_per_row)+1)* height
+    var scroll_position = (Math.floor(address / number_of_bytes_per_row) + 1) * height
 
     scroll_position = Math.max(scroll_position, 0)
     scroll_position = Math.min(scroll_position, scroll_obj[0].scrollHeight)
