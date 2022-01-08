@@ -156,7 +156,6 @@ $(document).ready(function () {
 
 
     $('#tabpanel').on("mouseenter mouseleave", "span.hex_byte", function (e) {
-        debugger;
         $(this).toggleClass("active");
 
         let td = $(this).closest('td')
@@ -478,6 +477,27 @@ function load_hex_editor(table_wrapper_id, file_content) {
             let row_html = `<td class="td_offset noselect">${offset}</td><td>${hex}</td><td class="noselect">${text}</td>`
             return `<tr>${row_html}</tr>`;
         }
+    });
+
+    $('#' + table_wrapper_id).on('copy',(e) => {
+        let text = ""
+        const selection = document.getSelection();
+        for(let range_index=0; range_index< selection.rangeCount; range_index++){
+            let range = selection.getRangeAt(range_index)
+            let spans = range.cloneContents()
+
+            for(let i = 0; i< spans.childNodes.length; i++){
+                let nodes = $(spans.childNodes[i]).find('span')
+                for(let j=0; j<nodes.length; j++){
+                    text += `0x${$(nodes[j]).html()} `
+                }
+
+            }
+        }
+
+        let clipboardData = e.clipboardData || window.clipboardData || e.originalEvent.clipboardData;
+        clipboardData.setData('text/plain', text);
+        e.preventDefault();
     });
 
     return table
