@@ -92,7 +92,7 @@ $(document).ready(function () {
                 }
             }
         })
-        .bind('dragover drop dragleave', function (event) {
+        .on('dragover drop dragleave', function (event) {
                 event.stopPropagation();
                 event.preventDefault();
                 if (event.type == 'drop') {
@@ -115,7 +115,7 @@ $(document).ready(function () {
         .find(".ui-tabs-nav").sortable({axis: 'x', zIndex: 2}).end()
 
 
-    $("#yara_panel").bind('dragover drop dragleave', (event) => {
+    $("#yara_panel").on('dragover drop dragleave', (event) => {
         event.stopPropagation();
         event.preventDefault();
         if (event.type == 'drop') {
@@ -134,7 +134,7 @@ $(document).ready(function () {
             }).done(function (html) {
                 $('#yara_panel .spinner').removeClass('lds-facebook')
                 add_yara_rules(html)
-            }).error(function (response) {
+            }).fail(function (response) {
                 $('#yara_panel .spinner').removeClass('lds-facebook')
                 if (response.status == 422) {
                     alert(response.responseText)
@@ -152,7 +152,7 @@ $(document).ready(function () {
     });
 
 
-    $(".ui-closable-tab").click(close_tab_event_handler);
+    $(".ui-closable-tab").on('click', close_tab_event_handler);
 
 
     $('#tabpanel').on("mouseenter mouseleave", "span.hex_byte", function (e) {
@@ -266,7 +266,7 @@ function match_rules(e) {
 
                 tableWrapper.trigger('lazytable:refresh');
 
-                $(dbgWin).find('td.start_addr, td.end_addr').bind('click', function (e) {
+                $(dbgWin).find('td.start_addr, td.end_addr').on('click', function (e) {
                     tableWrapper.trigger('lazytable:focus', Math.floor(parseInt($(e.target).html(), 16)/COL_COUNT)+1);
                 })
 
@@ -370,7 +370,7 @@ function create_new_hexeditor_tab(file) {
         tab_name = file_name.slice(0, 8) + '~' + file_name.slice(-4)
     }
 
-    const number_of_tabs = $('div#tabpanel ul li').size();
+    const number_of_tabs = $('div#tabpanel ul li').length;
     $('div#tabpanel ul').append(`<li id="hexEdtTab${num_tabs}" class="hex_editor_tab tab1">
                                     <a href="#hexEdtPanel${num_tabs}" title="${file_name}">${tab_name}</a>
                                     <span class="ui-icon ui-icon-circle-close ui-closable-tab"></span>
@@ -393,12 +393,12 @@ function create_new_hexeditor_tab(file) {
     // refresh and switch to new tab;
     $('#tabpanel').tabs('refresh').tabs("option", "active", number_of_tabs)
 
-    $(`#hexEdtTab${num_tabs} .ui-closable-tab`).click(close_tab_event_handler);
+    $(`#hexEdtTab${num_tabs} .ui-closable-tab`).on('click', close_tab_event_handler);
 
     $(`#run${num_tabs}`).button({
         "icon": "ui-icon-play",
         "showLabel": false
-    }).bind("click", match_rules);
+    }).on("click", match_rules);
 
     $(`#clear${num_tabs}`).button({
         "icon": "ui-icon-trash",
