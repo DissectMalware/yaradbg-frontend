@@ -1,4 +1,4 @@
-self.importScripts("/js/operators.js")
+self.importScripts("/yaradbg-frontend/js/operators.js")
 
 self.onmessage = function (e) {
     data = e.data

@@ -128,7 +128,7 @@ $(document).ready(function () {
                 type: "POST",
                 processData: false,
                 contentType: false,
-                url: "https://yaradbg.azurewebsites.net/api/yaraparser",
+                url: "http://localhost:7071/api/yaraparser",
                 data: files,
                 cache: false
             }).done(function (html) {
@@ -221,7 +221,7 @@ function match_rules(e) {
     }
     let hex_editor = e.target.closest('div.hexeditor_panel')
     let dbgWin = $(this).closest('div.editor_layout').find('table.debugWin')
-    var scroll = $(this).closest('.outer-center').find('.tableWrapper')
+    var tableWrapper = $(this).closest('.outer-center').find('.tableWrapper')
 
     var file = $(hex_editor).data('file_content')
 
@@ -261,17 +261,14 @@ function match_rules(e) {
                         debugger;
                         add_hex_marker(hex_editor, matched_string[j].start, matched_string[j].end)
 
-                        scroll.scrollTop(scroll.scrollTop()+1)
-
-
                     }
-
-
                 }
+
+                tableWrapper.trigger('lazytable:refresh');
 
                 $(dbgWin).find('td.start_addr, td.end_addr').bind('click', function (e) {
                     debugger;
-                    jump_to_addr(scroll, parseInt($(e.target).html(), 16))
+                    jump_to_addr(tableWrapper, parseInt($(e.target).html(), 16))
                 })
 
             };

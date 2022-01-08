@@ -370,6 +370,7 @@ table.debugWin tr:nth-child(2n) {
 
 .hex_byte.colored, .text_byte.colored {
     background-color: #2196F3;
+    color:whitesmoke;
 }
 table.debugWin td {
     font-family: Arial,Helvetica,sans-serif;
