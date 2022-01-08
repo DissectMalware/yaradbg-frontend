@@ -148,7 +148,7 @@ span{
 
 
 
-span {
+td.noselect {
     user-select: none; /* supported by Chrome and Opera */
     -webkit-user-select: none; /* Safari */
     -khtml-user-select: none; /* Konqueror HTML */
@@ -161,14 +161,7 @@ span.selected_cell{
     color: white;
 }
 
-.noselect {
-    -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-    -khtml-user-select: none; /* Konqueror HTML */
-    -moz-user-select: none; /* Old versions of Firefox */
-    -ms-user-select: none; /* Internet Explorer/Edge */
-    user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
-}
+
 
 span.hex_byte.active, td.td_offset.active span, span.text_byte.active, th span.active
 {
@@ -257,7 +250,6 @@ span.text_byte{
     white-space: nowrap;
     text-overflow: ellipsis;
     width: calc(100% - 30px);
-    user-select: none;
 }
 
 #yara_panel li:hover{

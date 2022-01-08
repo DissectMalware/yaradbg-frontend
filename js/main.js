@@ -475,7 +475,7 @@ function load_hex_editor(table_wrapper_id, file_content) {
                     text += `<span class='text_byte ${color_class}'>&nbsp;</span>`
                 }
             }
-            let row_html = `<td class="td_offset">${offset}</td><td>${hex}</td><td>${text}</td>`
+            let row_html = `<td class="td_offset noselect">${offset}</td><td>${hex}</td><td class="noselect">${text}</td>`
             return `<tr>${row_html}</tr>`;
         }
     });
