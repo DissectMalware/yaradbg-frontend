@@ -26,14 +26,14 @@ jobs:
           find: "http://localhost:7071/api/yaraparser"
           replace: "https://yaradbg.azurewebsites.net/api/yaraparser"
           regex: false
-          include: "main.js"
+          include: "**main.js"
       - name: Adjust paths
         uses: jacobtomlinson/gha-find-replace@v2
         with:
           find: "/yaradbg-frontend/js/operators.js"
           replace: "/js/operators.js"
           regex: false
-          include: "hex_exp_worker.js"
+          include: "**hex_exp_worker.js"
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1

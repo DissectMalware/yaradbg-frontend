@@ -1,0 +1,51 @@
+<html>
+<head>
+    <link rel="stylesheet" href="css/main.css"/>
+    <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+    <script src="js/external/jquery.lazytable.min.js"></script>
+
+</head>
+<body>
+<div class="tableWrapper" style="height:90%;">
+    <table>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+
+    function jump_to_addr(scroll_obj, address)
+    {
+        const height = 20
+        const number_of_bytes_per_row = 16
+        var scroll_position = parseInt(address / number_of_bytes_per_row) * height - 23
+
+        scroll_position = Math.max(scroll_position, 0)
+        scroll_position = Math.min(scroll_position, scroll_obj[0].scrollHeight)
+        scroll_obj.scrollTop(scroll_position)
+    }
+    data = []
+
+    hex = ""
+    text = ""
+    for (let j = 0; j < 16; j++) {
+        hex += "<span class='hex_byte'>00</span>"
+        text += "<span class='text_byte'>.</span>"
+    }
+    for (let i = 0; i < 10000; i++) {
+        data[i] = ['<span>' + (i * 16).toString(16).padStart(8, '0') + '</span>', hex, text]
+    }
+
+    var table = $('.tableWrapper').LazyTable({
+        data: data,
+        startIndex: 0,
+        keepExisting: false,
+    });
+
+
+
+
+
+</script>
+</body>
+</html>
