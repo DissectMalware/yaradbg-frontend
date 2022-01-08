@@ -423,22 +423,16 @@ function close_tab_event_handler() {
 }
 
 function load_hex_editor(table_wrapper_id, file_content) {
-    var data = []
-    if (file_content.length == 0) {
-        hex = ""
-        text = ""
-
+    let data = []
+    if (file_content.length === 0) {
         for (let i = 0; i < 100; i++) {
             data[i] = [i * 16, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
         }
     } else {
         data = file_content
-
     }
 
-
-
-    var table = $('#' + table_wrapper_id).LazyTable({
+    let table = $('#' + table_wrapper_id).LazyTable({
         data: data,
         startIndex: 0,
         keepExisting: false,
@@ -447,10 +441,11 @@ function load_hex_editor(table_wrapper_id, file_content) {
         generator: function (data) {
             let markers = $('#' + table_wrapper_id).closest('div.hexeditor_panel').data('markers')
             let offset = '<span>' + (data[0]).toString(16).padStart(8, '0') + '</span>'
-            var hex = ""
-            var text = ""
-            let row_marker = []
-            let color_class = ""
+            let hex = "",
+                text = "",
+                row_marker = [],
+                color_class = ""
+
             if(typeof markers !=='undefined')
                 row_marker = markers.get(get_row_id(data[0]))
 
@@ -477,21 +472,27 @@ function load_hex_editor(table_wrapper_id, file_content) {
             let row_html = `<td class="td_offset noselect">${offset}</td><td>${hex}</td><td class="noselect">${text}</td>`
             return `<tr>${row_html}</tr>`;
         }
-    });
-
-    $('#' + table_wrapper_id).on('copy',(e) => {
-        let text = ""
+    }).on('copy',(e) => {
+        let text = "",
+            range = null,
+            spans = null,
+            nodes = null
         const selection = document.getSelection();
+
         for(let range_index=0; range_index< selection.rangeCount; range_index++){
-            let range = selection.getRangeAt(range_index)
-            let spans = range.cloneContents()
+            range = selection.getRangeAt(range_index)
+            spans = range.cloneContents()
 
             for(let i = 0; i< spans.childNodes.length; i++){
-                let nodes = $(spans.childNodes[i]).find('span')
-                for(let j=0; j<nodes.length; j++){
-                    text += `0x${$(nodes[j]).html()} `
+                if( spans.childNodes[i].tagName !== 'SPAN') {
+                    nodes = $(spans.childNodes[i]).find('span')
+                    for (let j = 0; j < nodes.length; j++) {
+                        text += `0x${$(nodes[j]).html()} `
+                    }
                 }
-
+                else{
+                    text += `0x${$(spans.childNodes[i]).html()} `
+                }
             }
         }
 
