@@ -267,8 +267,6 @@ function match_rules(e) {
                 tableWrapper.trigger('lazytable:refresh');
 
                 $(dbgWin).find('td.start_addr, td.end_addr').bind('click', function (e) {
-                    debugger;
-                    // jump_to_addr(tableWrapper, parseInt($(e.target).html(), 16))
                     tableWrapper.trigger('lazytable:focus', Math.floor(parseInt($(e.target).html(), 16)/COL_COUNT)+1);
                 })
 
@@ -485,13 +483,4 @@ function load_hex_editor(table_wrapper_id, file_content) {
     return table
 }
 
-function jump_to_addr(scroll_obj, address) {
-    const height = 22.5
-    const number_of_bytes_per_row = 16
-    var scroll_position = (Math.floor(address / number_of_bytes_per_row) + 1) * height
-
-    scroll_position = Math.max(scroll_position, 0)
-    scroll_position = Math.min(scroll_position, scroll_obj[0].scrollHeight)
-    scroll_obj.scrollTop(scroll_position)
-}
 
