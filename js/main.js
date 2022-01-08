@@ -268,7 +268,8 @@ function match_rules(e) {
 
                 $(dbgWin).find('td.start_addr, td.end_addr').bind('click', function (e) {
                     debugger;
-                    jump_to_addr(tableWrapper, parseInt($(e.target).html(), 16))
+                    // jump_to_addr(tableWrapper, parseInt($(e.target).html(), 16))
+                    tableWrapper.trigger('lazytable:focus', Math.floor(parseInt($(e.target).html(), 16)/COL_COUNT)+1);
                 })
 
             };
