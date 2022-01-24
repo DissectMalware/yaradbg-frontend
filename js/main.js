@@ -48,7 +48,6 @@ $(document).ready(function () {
             closable: true,
             activate: function (event, ui) {
                 if (ui.newPanel.hasClass('hexeditor_panel')) {
-                    debugger;
                     var file = ui.newPanel.data('attached_file')
                     if (file != undefined) {
                         var reader = new FileReader();
@@ -220,6 +219,7 @@ function match_rules(e) {
     }
     let hex_editor = e.target.closest('div.hexeditor_panel')
     let dbgWin = $(this).closest('div.editor_layout').find('table.debugWin')
+    let dbgWinWrapper = $(this).closest('div.editor_layout').find('div.debugWinWrapper')
     var tableWrapper = $(this).closest('.outer-center').find('.tableWrapper')
 
     var file = $(hex_editor).data('file_content')
@@ -234,9 +234,10 @@ function match_rules(e) {
 
                 let matched_entity = null
 
-                debugger;
+                let count = 0;
                 for (let entry of result.strings) {
                     let matched_string = entry[1]
+                    count = 0
                     for (let j = 0; j < matched_string.length; j++) {
                         if (matched_string[j].string.type === 'hex_exp_bytecode') {
                             matched_entity = []
@@ -244,24 +245,32 @@ function match_rules(e) {
                                 matched_entity.push(file[i].toString(16))
                             }
                             matched_entity = matched_entity.join(' ')
-                        } else if (matched_string[j].string.type === 'literal_string') {
+                        } else if (matched_string[j].string.type === 'literal_string' ||
+                            matched_string[j].string.type === 'regex_expression_bytecode') {
                             matched_entity = String.fromCharCode(...file.slice(matched_string[j].start,
                                 matched_string[j].end + 1))
                         }
-                        dbgWin.append(`
-                        <tr >
-                            <td class="rule_name">${key}</td>
-                            <td class="str_name">${matched_string[j].string.str_name}</td>
-                            <td class="start_addr">${matched_string[j].start.toString(16)}</td>
-                            <td class="end_addr">${matched_string[j].end.toString(16)}</td>
-                            <td class="match">${matched_entity}</td>
-                        </tr>`)
+                        if( count < 10) {
+                            dbgWin.append(`
+                                <tr >
+                                    <td class="rule_name">${key}</td>
+                                    <td class="str_name">${matched_string[j].string.str_name}</td>
+                                    <td class="str_name">${count}/${matched_string.length}</td>
+                                    <td class="start_addr">${matched_string[j].start.toString(16)}</td>
+                                    <td class="end_addr">${matched_string[j].end.toString(16)}</td>
+                                    <td class="match">${matched_entity}</td>
+                                </tr>`)
+                        }
 
-                        debugger;
+                        count += 1
+
+
+
                         add_hex_marker(hex_editor, matched_string[j].start, matched_string[j].end)
 
                     }
                 }
+
 
                 tableWrapper.trigger('lazytable:refresh');
 
@@ -269,7 +278,9 @@ function match_rules(e) {
                     tableWrapper.trigger('lazytable:focus', Math.floor(parseInt($(e.target).html(), 16)/COL_COUNT)+1);
                 })
 
+
             };
+
 
         });
     }
@@ -354,9 +365,11 @@ function create_new_hexeditor_tab(file) {
                 </div>
             </div>
             <div class="outer-south ui-layout-south">
+                <div class="debugWinWrapper" id="debugWinWrapper${id}" style="height: 100%" >
                     <table id="debugWin${id}" class="debugWin">
                         
                     </table>
+                </div>
             </div>
         </div>`
 
@@ -409,7 +422,6 @@ function create_new_hexeditor_tab(file) {
 
 
 function close_tab_event_handler() {
-    debugger;
     const tabContainerDiv = $(this).closest(".ui-tabs").attr("id");
     const active_index_before_deletion = $("#" + tabContainerDiv).tabs("option", "active")
     const panelId = $(this).closest("li").remove().attr("aria-controls");
@@ -452,7 +464,6 @@ function load_hex_editor(table_wrapper_id, file_content) {
             for (let i = 0; i < data[1].length; i++) {
                 color_class = ""
                 if(typeof row_marker !=='undefined' && row_marker.length>0) {
-                    debugger;
                     for (let j = 0; j < row_marker.length; j++) {
                         if (i >= row_marker[j]['start'] && i <= row_marker[j]['end']) {
                             color_class = "colored"

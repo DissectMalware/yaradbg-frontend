@@ -34,8 +34,9 @@ function match_strings(strings, file, rule_result) {
     for (const index in strings) {
         let string = strings[index]
 
-        if (string.type == 'hex_exp_bytecode') {
-            matches = find_all_hex_expression(file, string.val)
+        if (string.type == 'hex_exp_bytecode' ||
+            string.type == 'regex_expression_bytecode') {
+            matches = find_all(file, string.val)
             if (matches != null) {
                 for (let i = 0; i < matches.length; i++) {
                     rule_result.get(string.str_name.slice(1)).push({string: string, start: matches[i].start, end: matches[i].end})
@@ -61,43 +62,49 @@ function match_strings(strings, file, rule_result) {
             if (wide == false)
                 ascii = true
 
-            let bytecode = ''
+            let bytecode = []
             string.val = string.val.substr(1, string.val.length - 2)
 
-
             for (let i = 0; i < string.val.length; i++) {
-                bytecode += `b ${string.val.charCodeAt(i).toString(16)};`
+                bytecode.push(`chr ${string.val.charCodeAt(i).toString(16)}`)
             }
-            bytecode += 'match;'
+            bytecode.push('match')
 
-            matches = find_all_hex_expression(file, bytecode)
+            matches = find_all(file, bytecode)
             if (matches != null) {
                 for (let i = 0; i < matches.length; i++) {
                     rule_result.get(string.str_name.slice(1)).push({string: string, start: matches[i].start, end: matches[i].end})
                 }
             }
         }
+
     }
 
     return matches
 }
 
-function find_all_hex_expression(file_content, hex_bytecode) {
+function find_all(file_content, regex_bytecode) {
     let index = 0
     let matches = []
     let match = null
 
-    let instructions = get_instructions(hex_bytecode)
+    let instructions = get_instructions(regex_bytecode)
     let parts = []
     let has_start_mask, has_end_mask;
     var lookahead = null
 
-    if (instructions[0][0] == 'b')
+    if (instructions[0][0] == 'chr')
         lookahead = instructions[0][1]
+
+    let thread_pool = []
+    for(let i = 0 ; i< 10; i++)
+    {
+        thread_pool.push({pc: 0, priority: 0})
+    }
 
     let start = performance.now()
     while (index < file_content.length) {
-        match = find_hex_expression(file_content, instructions, index)
+        match = find(file_content, instructions, index, thread_pool)
         if (match != null) {
             index = match.start + 1
             matches.push(match)
@@ -112,33 +119,27 @@ function find_all_hex_expression(file_content, hex_bytecode) {
 }
 
 function get_instructions(bytecode) {
+    debugger;
     let instructions = []
-    let lines = bytecode.split(';')
+    let lines = bytecode
     let has_start_mask = false
     let has_end_mask = false
     let parts = null
 
     for (let i = 0; i < lines.length; i++) {
         parts = lines[i].split(/[ ,]/)
-        if (parts[0] == 'b' || parts[0] == 'nb') {
-            has_start_mask = parts[1].startsWith('?')
-            has_end_mask = parts[1].endsWith('?')
+        if (parts[0] == 'chr') {
+            has_start_mask =  parts[1].startsWith('?')? 0 : 0x0f
+            has_end_mask = parts[1].endsWith('?')? 0 : 0xf0
             parts[1] = parseInt(parts[1].replace('?', '0'), 16)
-            if (has_start_mask === false && has_end_mask === false) {
-                parts.push(0xff)
-            } else if (has_start_mask === true && has_end_mask === false) {
-                parts.push(0x0f)
-            } else if (has_start_mask === false && has_end_mask === true) {
-                parts.push(0xf0)
-            } else {
-                parts.push(0)
-            }
-            if (parts[0] == 'nb') {
-                parts[2] = parseInt(parts[2])
+            parts.push(has_end_mask | has_start_mask)
+        } else if (parts[0] == 'chrc') {
+            for(let i=1; i<parts.length; i++){
+                parts[i] = parseInt(parts[i], 16)
             }
         } else if (parts[0] == 'jmp') {
             parts[1] = get_jmp_loc(i, parts[1])
-        } else if (parts[0] == 'split') {
+        } else if (parts[0].startsWith('split'))  {
             parts[1] = get_jmp_loc(i, parts[1])
             parts[2] = get_jmp_loc(i, parts[2])
         } else if (parts[0] == 'ignore') {
@@ -150,9 +151,72 @@ function get_instructions(bytecode) {
     return instructions
 }
 
-function find_hex_expression(file_content, instructions, start_index) {
+function add_thread(instructions, pc, queue, content){
+    let instruction = instructions[pc]
+    let operator = instruction[0]
 
-    let current_state = [0]
+    switch(operator){
+        case 'splitjmp':
+            add_thread(instructions, instruction[2], queue, content)
+            add_thread(instructions, instruction[1], queue, content)
+            break
+        case 'splitstay':
+            add_thread(instructions, instruction[1], queue, content)
+            add_thread(instructions, instruction[2], queue, content)
+            break
+        case 'split':
+            add_thread(instructions, instruction[1], queue, content)
+            add_thread(instructions, instruction[2], queue, content)
+            break
+        case 'jmp':
+            add_thread(instructions, instruction[1], queue, content)
+            break
+        case 'chr':
+            is_match = instruction[2] == 0 ? true : instruction[1] == (content & instruction[2])
+            if(is_match) {
+                queue.push(pc)
+            }
+            break
+        case 'chrc':
+            let bitmap_index = (content >> 3) + 1
+            let bit_index = (content& 0x07)
+            let mask = 1 << bit_index
+            is_match = ((instruction[bitmap_index] & mask) != 0)
+            if (is_match )
+                queue.push(pc)
+            break
+        default:
+            queue.push(pc)
+    }
+
+}
+
+function get_thread(thread_pool, pc, priority)
+{
+    let new_thread = null
+    if(thread_pool.length != 0) {
+        new_thread = thread_pool.pop()
+        new_thread.pc = pc
+        new_thread.priority = priority
+    }
+    else
+        new_thread = { pc:pc , priority:priority}
+    return new_thread
+
+}
+
+function clear_thread_array(thread_pool, thread_array){
+    thread_pool.push(...thread_array)
+    thread_array.length = 0
+}
+
+
+function find(file_content, instructions, start_index, thread_pool) {
+
+    debugger;
+    let current_state = []
+    current_state.push(get_thread(thread_pool, 0, 0))
+    // add_thread(instructions, 0, current_state, file_content[start_index])
     let next_state = []
 
     let c_thread = null
@@ -165,15 +229,18 @@ function find_hex_expression(file_content, instructions, start_index) {
 
     let ignore_stack = []
     let ignore = null
+
+    let skip = false
     for (let i = start_index; i < file_content.length; i++) {
-        for (let t = 0; t < current_state.length; t++) {
-            c_prgcounter = current_state[t]
+        skip = false;
+        for (let t = 0; t < current_state.length & skip == false; t++) {
+            c_prgcounter = current_state[t].pc
             instruction = instructions[c_prgcounter]
             op = instruction[0]
             switch (op) {
-                case 'b':
+                case 'chr':
                     is_match = instruction[2] == 0 ? true : instruction[1] == (file_content[i] & instruction[2])
-                    if (is_match == false) {
+                    if (is_match === false) {
                         if (ignore_stack.length == 0) {
                             break;
                         } else {
@@ -186,7 +253,30 @@ function find_hex_expression(file_content, instructions, start_index) {
                             }
                         }
                     }
-                    next_state.push(c_prgcounter + 1)
+                    add_priority_queue(next_state,get_thread(thread_pool, c_prgcounter + 1, current_state[t].priority))
+                    // add_thread(instructions, c_prgcounter + 1, next_state, file_content[i+1] )
+                    break;
+                case 'chrc':
+                    let bitmap_index = (file_content[i] >> 3) + 1
+                    let bit_index = (file_content[i] & 0x07)
+                    let mask = 1 << bit_index
+                    is_match = ((instruction[bitmap_index] & mask) != 0)
+                    if (is_match === false) {
+                        if (ignore_stack.length == 0) {
+                            break;
+                        } else {
+                            ignore = ignore_stack.pop()
+                            i = ignore.end
+                            c_prgcounter = ignore.ignore_loc
+                            ignore.end -= 1
+                            if (ignore.start <= ignore.end) {
+                                ignore_stack.push(ignore)
+                            }
+                        }
+                    }
+                    // next_state.push(c_prgcounter + 1)
+                    next_state.push(get_thread(thread_pool, c_prgcounter + 1, current_state[t].priority))
+                    //add_thread(instructions, c_prgcounter + 1, next_state,  file_content[i+1])
                     break;
                 case 'ignore':
                     if (instruction[2] == -1)
@@ -197,16 +287,25 @@ function find_hex_expression(file_content, instructions, start_index) {
                         ignore_loc: c_prgcounter
                     })
                     i = i + instruction[1] - 1
-                    next_state.push(c_prgcounter + 1)
+                    // next_state.push(c_prgcounter + 1)
+                    add_priority_queue(next_state,get_thread(thread_pool, c_prgcounter + 1, current_state[t].priority))
+                    break
+                case 'splitjmp':
+                    add_priority_queue(current_state, get_thread(thread_pool, instruction[1], current_state[t].priority))
+                    add_priority_queue(current_state, get_thread(thread_pool, instruction[2], current_state[t].priority+1))
+                    break
+                case 'splitstay':
+                    add_priority_queue(current_state, get_thread(thread_pool, instruction[1], current_state[t].priority+1))
+                    add_priority_queue(current_state, get_thread(thread_pool, instruction[2], current_state[t].priority))
+                    break
+                case 'split':
+                    add_priority_queue(current_state, get_thread(thread_pool, instruction[1], current_state[t].priority+1))
+                    add_priority_queue(current_state, get_thread(thread_pool, instruction[2], current_state[t].priority))
+                    break
+                case 'jmp':
+                    add_priority_queue(current_state, get_thread(thread_pool, instruction[1], current_state[t].priority))
                     break
 
-                case 'jmp':
-                    current_state.push(instruction[1])
-                    break;
-                case 'split':
-                    current_state.push(instruction[1])
-                    current_state.push(instruction[2])
-                    break
                 case 'match':
                     if (found_match == null)
                         found_match = {
@@ -223,6 +322,8 @@ function find_hex_expression(file_content, instructions, start_index) {
                             }
                         }
                     }
+                    skip = true
+                    break;
 
             }
         }
@@ -231,15 +332,40 @@ function find_hex_expression(file_content, instructions, start_index) {
             if (found_match != null) {
                 return found_match
             }
-            current_state = [0]
+            // current_state = []
+            clear_thread_array(thread_pool, current_state)
             start_index = i + 1
+            // add_thread(instructions, 0, current_state, file_content[start_index])
+            current_state.push(get_thread(thread_pool, 0, 0))
+
         } else {
+            clear_thread_array(thread_pool, current_state)
             current_state = next_state
             next_state = []
+
         }
     }
-    return null
+    return found_match
 }
+
+function add_priority_queue(queue, state){
+    queue.push(state)
+    let state_loc = queue.length -1
+    for(let i=queue.length -2; i>=0; i--)
+    {
+        if(queue[state_loc].priority < queue[i].priority)
+        {
+            let tmp = queue[state_loc];
+            queue[state_loc] = queue[i];
+            queue[i]= tmp;
+            state_loc = i
+        }
+        else{
+            break
+        }
+    }
+}
+
 
 
 function get_jmp_loc(current_loc, jump_addr) {
