@@ -234,10 +234,10 @@ function match_rules(e) {
 
                 let matched_entity = null
 
-                let count = 0;
+                let count = 1;
                 for (let entry of result.strings) {
                     let matched_string = entry[1]
-                    count = 0
+                    count = 1
                     for (let j = 0; j < matched_string.length; j++) {
                         if (matched_string[j].string.type === 'hex_exp_bytecode') {
                             matched_entity = []
@@ -250,7 +250,7 @@ function match_rules(e) {
                             matched_entity = String.fromCharCode(...file.slice(matched_string[j].start,
                                 matched_string[j].end + 1))
                         }
-                        if( count < 10) {
+                        if( count <= 20) {
                             dbgWin.append(`
                                 <tr >
                                     <td class="rule_name">${key}</td>
