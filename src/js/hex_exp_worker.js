@@ -1,10 +1,10 @@
 if( 'function' === typeof importScripts) {
 
-    // self.importScripts("/yaradbg-frontend/src/js/operators.js")
+    self.importScripts("operators.js")
 
     self.onmessage = function (e) {
-        data = e.data
-        res = match_rule(data.file, data.rule)
+        let data = e.data
+        let res = match_rule(data.file, data.rule)
         self.postMessage(res);
     }
 
@@ -16,7 +16,7 @@ if( 'function' === typeof importScripts) {
             if (key == 'string') {
                 match_strings(rule[key], file, evaluated_rule.strings)
             } else if (key == 'condition') {
-                eval_condition(file, rule[key], evaluated_rule)
+                operators.eval_condition(file, rule[key], evaluated_rule)
             }
         });
 
