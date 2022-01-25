@@ -33,7 +33,7 @@ jobs:
           find: "/yaradbg-frontend/dist/worker.js"
           replace: "worker.js"
           regex: false
-          include: "**worker.js"
+          include: "**yaradbg_frontend.js"
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
