@@ -226,6 +226,12 @@ function match_rules(e) {
     var file = $(hex_editor).data('file_content')
 
     if (typeof file != 'undefined') {
+
+        let markers = $(hex_editor).data('markers')
+        if (typeof markers === 'undefined') {
+            $(hex_editor).data('markers', new Map())
+        }
+
         Object.keys(rule_file.rules).forEach(function (key) {
             var rule = rule_file.rules[key]
             worker.postMessage({file: file, rule: rule})
