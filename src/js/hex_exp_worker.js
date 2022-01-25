@@ -1,6 +1,6 @@
 if( 'function' === typeof importScripts) {
 
-    self.importScripts("/yaradbg-frontend/src/js/operators.js")
+    // self.importScripts("/yaradbg-frontend/src/js/operators.js")
 
     self.onmessage = function (e) {
         data = e.data
