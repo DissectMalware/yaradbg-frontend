@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
     devtool: false,
     entry: {
-        yaradbg_frontend: ['./src/js/external/jquery.layout_and_plugins.min.js',
+        main: ['./src/js/external/jquery.layout_and_plugins.min.js',
             './src/js/external/jquery.lazytable.js',
             './src/js/main.js'],
         worker: [ './src/js/hex_exp_worker.js'],
