@@ -234,7 +234,7 @@ function match_rules(e) {
 
         Object.keys(rule_file.rules).forEach(function (key) {
             var rule = rule_file.rules[key]
-            worker.postMessage({file: file, rule: rule})
+            worker.postMessage({file: file, rule_name: key, rule: rule})
             worker.onmessage = function (event) {
                 dbgWin.html("")
                 result = event.data;
@@ -260,7 +260,7 @@ function match_rules(e) {
                         if( count <= 20) {
                             dbgWin.append(`
                                 <tr >
-                                    <td class="rule_name">${key}</td>
+                                    <td class="rule_name">${result.rule_name}</td>
                                     <td class="str_name">${matched_string[j].string.str_name}</td>
                                     <td class="str_name">${count}/${matched_string.length}</td>
                                     <td class="start_addr">${matched_string[j].start.toString(16)}</td>

@@ -5,6 +5,7 @@ if( 'function' === typeof importScripts) {
     self.onmessage = function (e) {
         let data = e.data
         let res = match_rule(data.file, data.rule)
+        res.rule_name = data.rule_name
         self.postMessage(res);
     }
 
