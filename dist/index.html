@@ -1,1 +1,72 @@
-<!doctype html><html lang="en" style="display: none"><head><meta charset="UTF-8"><title>YaraDBG v0.0.1</title><link rel="stylesheet" href="https://code.jquery.com/ui/1.13.0/themes/base/jquery-ui.css"/><script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script><script src="https://code.jquery.com/jquery-migrate-3.3.2.js"></script><script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js" integrity="sha256-hlKLmzaRlE8SCJC1Kw8zoUbU8BxA+8kR3gseuKfMjxA=" crossorigin="anonymous"></script><script defer="defer" src="yaradbg-frontend.5e34eae45397007af4f2.min.js"></script></head><body><div class="outer-center"><div class="middle-center"><div id="tabpanel" class="inner-center"><ul id="tabbuttons" class="hidden"><li class="tab1"><a href="#main_tab">Home</a></li><li class="tab1"><a href="#hexedt_tab1">Hex Editor 1</a> <span class="ui-icon ui-icon-circle-close ui-closable-tab"></span></li></ul><div id="panels"><div id="main_tab" class="tab-panel"></div><div id="hexedt_tab1" class="tab-panel hexeditor_panel hexeditor_demo clusterize-scroll"><table><thead><tr><th style="width:86px;"></th><th><span>00</span><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>0a</span><span>0b</span><span>0c</span><span>0d</span><span>0e</span><span>0f</span></th><th></th></tr></thead><tbody></tbody></table><div id="hexedt_wrapper1" class="tableWrapper"><table><tbody></tbody></table></div></div></div></div></div></div><div class="outer-west" id="sidebar_yara"><div id="yara_panel"><div class="spinner"><div></div><div></div><div></div></div></div></div></body></html>
+<!DOCTYPE html>
+<html lang="en" style="display: none">
+<head>
+    <meta charset="UTF-8">
+    <title>YaraDBG v0.0.1</title>
+
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.0/themes/base/jquery-ui.css"/>
+
+    <script
+            src="https://code.jquery.com/jquery-3.6.0.min.js"
+            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+            crossorigin="anonymous"></script>
+
+    <script src="https://code.jquery.com/jquery-migrate-3.3.2.js"></script>
+    <script
+            src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"
+            integrity="sha256-hlKLmzaRlE8SCJC1Kw8zoUbU8BxA+8kR3gseuKfMjxA="
+            crossorigin="anonymous"></script>
+
+<script defer src="yaradbg_frontend.js"></script><script defer src="worker.js"></script></head>
+<body>
+
+<div class="outer-center">
+    <div class="middle-center">
+        <div id="tabpanel" class="inner-center">
+            <ul id="tabbuttons" class="hidden">
+                <li class="tab1">
+                    <a href="#main_tab">Home</a>
+                </li>
+                <li class="tab1">
+                    <a href="#hexedt_tab1">Hex Editor 1</a>
+                    <span class='ui-icon ui-icon-circle-close ui-closable-tab'></span>
+                </li>
+            </ul>
+
+            <div id="panels">
+
+                <div id="main_tab" class="tab-panel" >
+                </div>
+                <div id="hexedt_tab1" class="tab-panel hexeditor_panel hexeditor_demo clusterize-scroll" >
+                    <table>
+                        <thead>
+                        <tr>
+                            <th style="width:86px;"></th>
+                            <th><span>00</span><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>0a</span><span>0b</span><span>0c</span><span>0d</span><span>0e</span><span>0f</span></th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div id="hexedt_wrapper1" class="tableWrapper">
+                        <table>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+<div class="outer-west" id="sidebar_yara" >
+    <div id="yara_panel">
+        <div class="spinner"><div></div><div></div><div></div></div>
+    </div>
+</div>
+<!--<div class="ui-layout-north">Outer North</div>-->
+
+
+</body>
+</html>

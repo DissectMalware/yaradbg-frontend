@@ -1,6 +1,6 @@
 import style from '../css/main.css'
 var outerLayout, middleLayout, innerLayout;
-var worker = new Worker('/src/js/hex_exp_worker.js');
+var worker = new Worker('/yaradbg-frontend/dist/worker.js');
 const COL_COUNT = 16
 
 $(document).ready(function () {

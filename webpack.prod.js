@@ -4,7 +4,7 @@ const common = require('./webpack.core.js');
 
 module.exports = merge(common, {
     output: {
-        filename: '[name].[contenthash].min.js',
+        filename: '[name].min.js',
     },
     mode: 'production',
     module: {

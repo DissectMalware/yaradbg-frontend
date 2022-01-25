@@ -2,9 +2,11 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-    entry: {'yaradbg-frontend': ['./src/js/external/jquery.layout_and_plugins.min.js',
+    entry: {
+        yaradbg_frontend: ['./src/js/external/jquery.layout_and_plugins.min.js',
             './src/js/external/jquery.lazytable.js',
-            './src/js/main.js']},
+            './src/js/main.js'],
+        worker: './src/js/hex_exp_worker.js'},
     resolve: {
         extensions: ['.js']
     },
