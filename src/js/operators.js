@@ -170,6 +170,7 @@ function eq_operator(arg_left, arg_right) {
 }
 
 function integer_operator(arg_left, file, byte_count, signed = false, little_endian = true) {
+    debugger;
     let val = undefined
 
     let offset = parseInt(arg_left.val)
