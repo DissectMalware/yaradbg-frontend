@@ -1,5 +1,6 @@
+import style from '../css/main.css'
 var outerLayout, middleLayout, innerLayout;
-var worker = new Worker('/js/hex_exp_worker.js');
+var worker = new Worker('/src/js/hex_exp_worker.js');
 const COL_COUNT = 16
 
 $(document).ready(function () {
@@ -96,7 +97,7 @@ $(document).ready(function () {
                 event.preventDefault();
                 if (event.type == 'drop') {
                     for (let i = 0; i < event.originalEvent.dataTransfer.files.length; i++) {
-                        file = event.originalEvent.dataTransfer.files[i]
+                        let file = event.originalEvent.dataTransfer.files[i]
                         if (file.size > 20 * 1024 * 1024) {
                             alert(`${file.name} is too big (>20MB)`)
                             continue;
