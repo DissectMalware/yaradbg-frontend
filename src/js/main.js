@@ -232,16 +232,21 @@ function match_rules(e) {
             $(hex_editor).data('markers', new Map())
         }
 
+
         Object.keys(rule_file.rules).forEach(function (key) {
             var rule = rule_file.rules[key]
-            worker.postMessage({file: file, rule_name: key, rule: rule})
+            worker.postMessage({file: file, rule_name: key, rule: rule, hex_editor_id: $(hex_editor).attr('id')})
             worker.onmessage = function (event) {
-                dbgWin.html("")
+                // dbgWin.html("")
                 result = event.data;
 
                 let matched_entity = null
 
+                let table = $(`#${result.hex_editor_id}`).data('table')
+
                 let count = 1;
+
+                let rows = []
                 for (let entry of result.strings) {
                     let matched_string = entry[1]
                     count = 1
@@ -257,17 +262,17 @@ function match_rules(e) {
                             matched_entity = String.fromCharCode(...file.slice(matched_string[j].start,
                                 matched_string[j].end + 1))
                         }
-                        if( count <= 20) {
-                            dbgWin.append(`
-                                <tr >
-                                    <td class="rule_name">${result.rule_name}</td>
-                                    <td class="str_name">${matched_string[j].string.str_name}</td>
-                                    <td class="str_name">${count}/${matched_string.length}</td>
-                                    <td class="start_addr">${matched_string[j].start.toString(16)}</td>
-                                    <td class="end_addr">${matched_string[j].end.toString(16)}</td>
-                                    <td class="match">${matched_entity}</td>
-                                </tr>`)
-                        }
+                        if(count >100)
+                            break
+
+                        rows.push({rule_name: result.rule_name,
+                            string: matched_string[j].string.str_name,
+                            match_no:`${count}/${matched_string.length}`,
+                            start_offset:matched_string[j].start.toString(16),
+                            end_offset:matched_string[j].end.toString(16),
+                            match:matched_entity})
+
+
 
                         count += 1
 
@@ -276,7 +281,9 @@ function match_rules(e) {
                         add_hex_marker(hex_editor, matched_string[j].start, matched_string[j].end)
 
                     }
+
                 }
+                table.addRow(rows, false)
 
 
                 tableWrapper.trigger('lazytable:refresh');
@@ -373,13 +380,9 @@ function create_new_hexeditor_tab(file) {
             </div>
             <div class="outer-south ui-layout-south">
                 <div class="debugWinWrapper" id="debugWinWrapper${id}" style="height: 100%" >
-                    <table id="debugWin${id}" class="debugWin">
-                        
-                    </table>
                 </div>
             </div>
         </div>`
-
 
     const num_tabs = $('#tabpanel').data('hex_editor_tab_counter');
     $('#tabpanel').data('hex_editor_tab_counter', num_tabs + 1)
@@ -423,6 +426,24 @@ function create_new_hexeditor_tab(file) {
         "icon": "ui-icon-trash",
         "showLabel": false
     });
+
+    let table = new Tabulator(`#debugWinWrapper${num_tabs}`, {
+        height: '95%', // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
+        data: [], //assign data to table
+        layout: "fitColumns", //fit columns to width of table (optional)
+        selectable:true,
+        clipboard:"copy",
+        columns: [ //Define Table Columns
+            {title: "Rule Name", field: "rule_name", width: 300},
+            {title: "String Name", field: "string",},
+            {title: "Match No", field: "match_no", width: 100},
+            {title: "Start Offset", field: "start_offset", width: 100},
+            {title: "End Offset", field: "end_offset", width: 100},
+            {title: "Match", field: "match"},
+            // {title:"Date Of Birth", field:"dob", sorter:"date", hozAlign:"center"},
+        ],
+    });
+    $(`#hexEdtPanel${num_tabs}`).data('table', table)
 
 
 }

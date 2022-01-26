@@ -1,5 +1,4 @@
 export function eval_condition(file, condition_tasks, evaluated_rule) {
-    debugger;
     let result = null
     let task = null
     let evaluated_task = new Map()
@@ -170,7 +169,7 @@ function eq_operator(arg_left, arg_right) {
 }
 
 function integer_operator(arg_left, file, byte_count, signed = false, little_endian = true) {
-    debugger;
+
     let val = undefined
 
     let offset = parseInt(arg_left.val)

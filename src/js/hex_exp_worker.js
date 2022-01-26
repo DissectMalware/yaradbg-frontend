@@ -6,6 +6,7 @@ if( 'function' === typeof importScripts) {
         let data = e.data
         let res = match_rule(data.file, data.rule)
         res.rule_name = data.rule_name
+        res.hex_editor_id = data.hex_editor_id
         self.postMessage(res);
     }
 
@@ -126,7 +127,6 @@ if( 'function' === typeof importScripts) {
     }
 
     function get_instructions(bytecode) {
-        debugger;
         let instructions = []
         let lines = bytecode
         let has_start_mask = false
@@ -218,7 +218,6 @@ if( 'function' === typeof importScripts) {
 
     function find(file_content, instructions, start_index, thread_pool) {
 
-        debugger;
         let current_state = []
         current_state.push(get_thread(thread_pool, 0, 0))
         // add_thread(instructions, 0, current_state, file_content[start_index])
