@@ -20,6 +20,7 @@
   "homepage": "https://github.com/DissectMalware/yaradbg-frontend#readme",
   "devDependencies": {
     "babel-loader": "^8.2.3",
+    "copy-webpack-plugin": "^10.2.1",
     "css-loader": "^6.5.1",
     "html-webpack-plugin": "^5.5.0",
     "style-loader": "^3.3.1",

@@ -231,7 +231,6 @@ span.text_byte{
 
 }
 
-
 #yara_panel ul{
     list-style-type: none;
     padding: 0;
@@ -369,4 +368,14 @@ table.debugWin td {
     font-size: 14px;
     color: #333333;
     line-height: 1.4;
+}
+
+#credit {
+    position:absolute;
+    bottom:25px;
+}
+
+.yara_sig_panel {
+    height: calc(100% - 85px);
+    overflow-y: auto;
 }

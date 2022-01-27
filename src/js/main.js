@@ -142,7 +142,18 @@ $(document).ready(function () {
                     alert('Unknown error')
                 }
             });
-            $('#yara_panel').html('<div class="spinner lds-facebook"><div></div><div></div><div></div></div>')
+            $('#yara_panel').html(`<div><img src="img/yara-icon.png"/></div>
+                                <div class="spinner lds-facebook">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div id="yara_rules"></div>
+                                    <div id="credit">
+                                    <span>Developed by <a href="https://github.com/DissectMalware">@DissectMalware</a>
+                                    </span>
+                                </div>
+`)
         } else if (event.type == 'dragover') {
             $('#sidebar_yara').css({'backgroundColor': 'purple'})
         } else if (event.type == 'dragleave') {
@@ -190,9 +201,11 @@ $(document).ready(function () {
 function add_yara_rules(rule_json) {
     let rule_file = JSON.parse(rule_json)
     let rules_html = ''
+    let rule_id = 0
+    $('#yara_rules').addClass("yara_sig_panel")
     Object.keys(rule_file.rules).forEach(function (key) {
         rules_html += `
-            <li>
+            <li id="rule_${rule_id}">
                 <span></span><span class="name">${key}</span>
                 <span class="toggle">
                     <label class="switch">
@@ -201,11 +214,14 @@ function add_yara_rules(rule_json) {
                     </label>
                 </span>
            </li>`
+        rule_file.rules[key].rule_id = `rule_${rule_id}`
+        rule_file.rules[key].rule_name = key
+        rule_id += 1
     });
     rules_html = `<ul class="yara_rules">
                     ${rules_html}
                   </ul>`
-    $('#yara_panel').html(rules_html)
+    $('#yara_rules').html(rules_html)
     $('#yara_panel').data('rules', rule_file)
 }
 

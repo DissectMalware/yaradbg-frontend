@@ -1,4 +1,5 @@
 export function eval_condition(file, condition_tasks, evaluated_rule) {
+    debugger;
     let result = null
     let task = null
     let evaluated_task = new Map()
