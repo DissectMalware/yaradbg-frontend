@@ -220,7 +220,6 @@ function match_rules(e) {
     }
     let hex_editor = e.target.closest('div.hexeditor_panel')
     let dbgWin = $(this).closest('div.editor_layout').find('table.debugWin')
-    let dbgWinWrapper = $(this).closest('div.editor_layout').find('div.debugWinWrapper')
     var tableWrapper = $(this).closest('.outer-center').find('.tableWrapper')
 
     var file = $(hex_editor).data('file_content')
@@ -232,12 +231,16 @@ function match_rules(e) {
             $(hex_editor).data('markers', new Map())
         }
 
+        let table = $(hex_editor).data('table')
+        if(table !== 'undefined')
+        {
+            table.clearData();
+        }
 
         Object.keys(rule_file.rules).forEach(function (key) {
             var rule = rule_file.rules[key]
             worker.postMessage({file: file, rule_name: key, rule: rule, hex_editor_id: $(hex_editor).attr('id')})
             worker.onmessage = function (event) {
-                // dbgWin.html("")
                 result = event.data;
 
                 let matched_entity = null
