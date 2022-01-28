@@ -133,7 +133,8 @@ $(document).ready(function () {
                 cache: false
             }).done(function (html) {
                 $('#yara_panel .spinner').removeClass('lds-facebook')
-                add_yara_rules(html)
+                add_yara_rules(html
+                )
             }).fail(function (response) {
                 $('#yara_panel .spinner').removeClass('lds-facebook')
                 if (response.status == 422) {
@@ -206,7 +207,9 @@ function add_yara_rules(rule_json) {
     Object.keys(rule_file.rules).forEach(function (key) {
         rules_html += `
             <li id="rule_${rule_id}">
-                <span></span><span class="name">${key}</span>
+                <span></span>
+                <span class="rule_name" title="${key}">${key}</span>
+                <img class="rule_eval_details" src="./img/debug.png" title="Eval Steps"/>
                 <span class="toggle">
                     <label class="switch">
                       <input type="checkbox" checked>
@@ -214,6 +217,7 @@ function add_yara_rules(rule_json) {
                     </label>
                 </span>
            </li>`
+
         rule_file.rules[key].rule_id = `rule_${rule_id}`
         rule_file.rules[key].rule_name = key
         rule_id += 1
@@ -222,7 +226,16 @@ function add_yara_rules(rule_json) {
                     ${rules_html}
                   </ul>`
     $('#yara_rules').html(rules_html)
+
     $('#yara_panel').data('rules', rule_file)
+    $(`li .rule_name`).on('click', function (e){
+        debugger;
+        let rule_file = $('#yara_panel').data('rules')
+        let rule = rule_file.rules[e.target.title]
+
+        alert(e.target.toString())
+    })
+
 }
 
 

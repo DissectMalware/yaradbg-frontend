@@ -119,8 +119,8 @@ function of_operator(arg_left, arg_right, strings) {
     return {
         name: 'of_res',
         value: res,
-        line: arg_left.line,
-        col: arg_left.col
+        start_pos: arg_left.start_pos,
+        end_pos: arg_left.end_pos
     }
 }
 
@@ -128,8 +128,8 @@ function add_operator(arg_left, arg_right) {
     return {
         name: 'add_res',
         val: get_number(arg_left.val) + get_number(arg_right.val),
-        line: arg_left.line,
-        col: arg_left.col
+        start_pos: arg_left.start_pos,
+        end_pos: arg_left.end_pos
     }
 }
 
@@ -137,8 +137,8 @@ function and_operator(arg_left, arg_right) {
     return {
         name: 'and_res',
         val: get_boolean(arg_left.val) && get_boolean(arg_right.val),
-        line: arg_left.line,
-        col: arg_left.col
+        start_pos: arg_left.start_pos,
+        end_pos: arg_left.end_pos
     }
 }
 
@@ -146,8 +146,8 @@ function or_operator(arg_left, arg_right) {
     return {
         name: 'or_res',
         val: get_boolean(arg_left.val) || get_boolean(arg_right.val),
-        line: arg_left.line,
-        col: arg_left.col
+        start_pos: arg_left.start_pos,
+        end_pos: arg_left.end_pos
     }
 }
 
@@ -164,8 +164,8 @@ function eq_operator(arg_left, arg_right) {
     return {
         name: 'eq_res',
         val: arg_left_val === arg_right_val,
-        line: arg_left.line,
-        col: arg_left.col
+        start_pos: arg_left.start_pos,
+        end_pos: arg_left.end_pos
     }
 }
 
@@ -194,8 +194,8 @@ function integer_operator(arg_left, file, byte_count, signed = false, little_end
     return {
         name: `${signed ? "" : "u"}int${byte_count * 8}${little_endian ? "" : "be"}_res`,
         val: val,
-        line: arg_left.line,
-        col: arg_left.col
+        start_pos: arg_left.start_pos,
+        end_pos: arg_left.end_pos
     }
 }
 

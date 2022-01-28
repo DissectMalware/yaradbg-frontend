@@ -244,7 +244,7 @@ span.text_byte{
     font-family: Helvetica, Arial;
 }
 
-#yara_panel li span.name{
+#yara_panel li span.rule_name{
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -378,4 +378,17 @@ table.debugWin td {
 .yara_sig_panel {
     height: calc(100% - 85px);
     overflow-y: auto;
+}
+
+div#yara_rules li{
+    align-items: center;
+}
+
+img.rule_eval_details{
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+span.rule_name{
+    cursor: pointer;
 }
