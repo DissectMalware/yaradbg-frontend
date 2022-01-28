@@ -6,6 +6,22 @@ const COL_COUNT = 16
 $(document).ready(function () {
     $('html').show();
 
+    $( "#yara_rule_dialog" ).dialog({
+        autoOpen: false,
+        show: {
+            effect: "drop",
+            duration: 500
+        },
+        hide: {
+            effect: "drop",
+            duration: 500
+        },
+        open: function() {
+            $(this).dialog('option', 'maxHeight', $(window).height());
+        }
+    }).css("white-space","pre-wrap");
+
+
     outerLayout = $('body').layout({
         center__paneSelector: ".outer-center"
         , west__paneSelector: ".outer-west"
@@ -248,8 +264,9 @@ function add_yara_rules(rule_json, yara_file_content) {
         let rules_content = $('#yara_panel').data('rules_content')
         let rule_object = processed_rules.rules[e.target.title]
         let rule_text = rules_content.slice(rule_object.start_pos, rule_object.end_pos)
+        $( "#yara_rule_dialog" ).html(`<p>${rule_text}</p>`)
+        $( "#yara_rule_dialog" ).dialog("option","title",e.target.title).dialog( "open" );
 
-        alert(rule_text)
     })
 
 }

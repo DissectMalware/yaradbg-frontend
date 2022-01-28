@@ -392,3 +392,7 @@ img.rule_eval_details{
 span.rule_name{
     cursor: pointer;
 }
+
+#yara_rule_dialog p{
+    font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;
+}
