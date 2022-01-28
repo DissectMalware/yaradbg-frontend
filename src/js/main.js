@@ -21,6 +21,21 @@ $(document).ready(function () {
         }
     }).css("white-space","pre-wrap");
 
+    $( "#yara_rule_eval_dialog" ).dialog({
+        autoOpen: false,
+        show: {
+            effect: "drop",
+            duration: 500
+        },
+        hide: {
+            effect: "drop",
+            duration: 500
+        },
+        open: function() {
+            $(this).dialog('option', 'maxHeight', $(window).height());
+        }
+    }).css("white-space","pre-wrap");
+
 
     outerLayout = $('body').layout({
         center__paneSelector: ".outer-center"
@@ -233,11 +248,11 @@ function add_yara_rules(rule_json, yara_file_content) {
     let rules_html = ''
     let rule_id = 0
     $('#yara_rules').addClass("yara_sig_panel")
-    Object.keys(rule_file.rules).forEach(function (key) {
+    Object.keys(rule_file.rules).forEach(function (rule_name) {
         rules_html += `
-            <li id="rule_${rule_id}">
+            <li id="rule_${rule_id}"  rule_key="${rule_name}">
                 <span></span>
-                <span class="rule_name" title="${key}">${key}</span>
+                <span class="rule_name" title="${rule_name}">${rule_name}</span>
                 <img class="rule_eval_details" src="./img/debug.png" title="Eval Steps"/>
                 <span class="toggle">
                     <label class="switch">
@@ -247,8 +262,8 @@ function add_yara_rules(rule_json, yara_file_content) {
                 </span>
            </li>`
 
-        rule_file.rules[key].rule_id = `rule_${rule_id}`
-        rule_file.rules[key].rule_name = key
+        rule_file.rules[rule_name].rule_id = `rule_${rule_id}`
+        rule_file.rules[rule_name].rule_name = rule_name
         rule_id += 1
     });
     rules_html = `<ul class="yara_rules">
@@ -258,16 +273,32 @@ function add_yara_rules(rule_json, yara_file_content) {
 
     $('#yara_panel').data('rules', rule_file)
     $('#yara_panel').data('rules_content', yara_file_content)
-    $(`li .rule_name`).on('click', function (e){
-        debugger;
-        let processed_rules = $('#yara_panel').data('rules')
-        let rules_content = $('#yara_panel').data('rules_content')
-        let rule_object = processed_rules.rules[e.target.title]
-        let rule_text = rules_content.slice(rule_object.start_pos, rule_object.end_pos)
-        $( "#yara_rule_dialog" ).html(`<p>${rule_text}</p>`)
-        $( "#yara_rule_dialog" ).dialog("option","title",e.target.title).dialog( "open" );
+    $(`li .rule_name`).on('click', rule_name_click_handler)
+    $(`li .rule_eval_details`).on('click', rule_eval_detail_click_handler)
 
-    })
+}
+
+function rule_name_click_handler(e) {
+    debugger;
+    let processed_rules = $('#yara_panel').data('rules')
+    let rules_content = $('#yara_panel').data('rules_content')
+    let rule_object = processed_rules.rules[e.target.title]
+    let rule_text = rules_content.slice(rule_object.start_pos, rule_object.end_pos)
+    $( "#yara_rule_dialog" ).html(`<p>${rule_text}</p>`)
+    $( "#yara_rule_dialog" ).dialog("option","title",e.target.title).dialog( "open" );
+}
+
+function rule_eval_detail_click_handler(e){
+    debugger;
+    let processed_rules = $('#yara_panel').data('rules')
+    let yara_rule_li = e.target.closest('li')
+    let rule_object = processed_rules.rules[$(yara_rule_li).attr('rule_key')]
+    if( typeof rule_object.result === 'undefined'){
+        alert("You should run the rules against a file to see evaluation details")
+        return
+    }
+    $( "#yara_rule_eval_dialog" ).html(`<p>test</p>`)
+    $( "#yara_rule_eval_dialog" ).dialog("option","title",$(yara_rule_li).attr('rule_key')).dialog( "open" );
 
 }
 
@@ -349,16 +380,10 @@ function match_rules(e) {
                     }
 
                 }
-                table.addRow(rows, false)
-
-
-                tableWrapper.trigger('lazytable:refresh');
-
-                $(dbgWin).find('td.start_addr, td.end_addr').on('click', function (e) {
-                    tableWrapper.trigger('lazytable:focus', Math.floor(parseInt($(e.target).html(), 16)/COL_COUNT)+1);
-                })
-
-
+                if(rows.length > 0) {
+                    table.addRow(rows, false)
+                    tableWrapper.trigger('lazytable:refresh');
+                }
             };
 
 
@@ -497,21 +522,26 @@ function create_new_hexeditor_tab(file) {
         height: '95%', // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
         data: [], //assign data to table
         layout: "fitColumns", //fit columns to width of table (optional)
-        selectable:true,
+        // selectable:true,
         clipboard:"copy",
         columns: [ //Define Table Columns
             {title: "Rule Name", field: "rule_name", width: 300},
             {title: "String Name", field: "string",},
             {title: "Match No", field: "match_no", width: 100},
-            {title: "Start Offset", field: "start_offset", width: 100},
-            {title: "End Offset", field: "end_offset", width: 100},
+            {title: "Start Offset", field: "start_offset", width: 100, cellClick: winDBG_cell_click_handler},
+            {title: "End Offset", field: "end_offset", width: 100, cellClick: winDBG_cell_click_handler},
             {title: "Match", field: "match"},
             // {title:"Date Of Birth", field:"dob", sorter:"date", hozAlign:"center"},
         ],
     });
     $(`#hexEdtPanel${num_tabs}`).data('table', table)
 
+}
 
+function winDBG_cell_click_handler(e, cell) {
+    debugger;
+    let tableWrapper = $(e.target.closest('.hexeditor_panel ')).find('.tableWrapper')
+    jump_to_addr(tableWrapper, parseInt($(e.target).text(), 16))
 }
 
 
@@ -609,4 +639,15 @@ function load_hex_editor(table_wrapper_id, file_content) {
     return table
 }
 
+function jump_to_addr(scroll_obj, address) {
+    const height = 22.5
+    const number_of_bytes_per_row = 16
+    var scroll_position = (Math.floor(address / number_of_bytes_per_row) ) * height
+
+    scroll_position -= height
+
+    scroll_position = Math.max(scroll_position, 0)
+    scroll_position = Math.min(scroll_position, scroll_obj[0].scrollHeight)
+    scroll_obj.scrollTop(scroll_position)
+}
 

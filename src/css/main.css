@@ -349,7 +349,7 @@ table.debugWin .start_addr, table.debugWin .end_addr{
 
 }
 
-table.debugWin .start_addr:hover, table.debugWin .end_addr:hover{
+div[tabulator-field="start_offset"]:hover, div[tabulator-field="end_offset"]:hover{
     cursor: pointer;
     background-color: purple;
     color: whitesmoke;
