@@ -121,29 +121,36 @@ $(document).ready(function () {
         if (event.type == 'drop') {
 
             $('#sidebar_yara').css({'backgroundColor': 'white'})
-            let files = new FormData()
+
+            var reader = new FileReader();
+            var startTime = performance.now()
             let file = event.originalEvent.dataTransfer.files[0]
-            files.append('yarafile', file);
-            $.ajax({
-                type: "POST",
-                processData: false,
-                contentType: false,
-                url: "http://localhost:7071/api/yaraparser",
-                data: files,
-                cache: false
-            }).done(function (html) {
-                $('#yara_panel .spinner').removeClass('lds-facebook')
-                add_yara_rules(html
-                )
-            }).fail(function (response) {
-                $('#yara_panel .spinner').removeClass('lds-facebook')
-                if (response.status == 422) {
-                    alert(response.responseText)
-                } else {
-                    alert('Unknown error')
-                }
-            });
-            $('#yara_panel').html(`<div><img src="img/yara-icon.png"/></div>
+            var file_name = file.name
+            reader.onloadend = (evt) => {
+                if (evt.target.readyState == FileReader.DONE) {
+                    let text = evt.target.result;
+                    var files = new FormData()
+                    const blob = new Blob([text], {type : 'text/plain'})
+                    files.append('yarafile', blob, file_name);
+                    $.ajax({
+                        type: "POST",
+                        processData: false,
+                        contentType: false,
+                        url: "http://localhost:7071/api/yaraparser",
+                        data: files,
+                        cache: false
+                    }).done(function (html) {
+                        $('#yara_panel .spinner').removeClass('lds-facebook')
+                        add_yara_rules(html, text)
+                    }).fail(function (response) {
+                        $('#yara_panel .spinner').removeClass('lds-facebook')
+                        if (response.status == 422) {
+                            alert(response.responseText)
+                        } else {
+                            alert('Unknown error')
+                        }
+                    });
+                    $('#yara_panel').html(`<div><img src="img/yara-icon.png"/></div>
                                 <div class="spinner lds-facebook">
                                     <div></div>
                                     <div></div>
@@ -154,7 +161,13 @@ $(document).ready(function () {
                                     <span>Developed by <a href="https://github.com/DissectMalware">@DissectMalware</a>
                                     </span>
                                 </div>
-`)
+                    `)
+
+                }
+
+            }
+            reader.readAsText(file);
+
         } else if (event.type == 'dragover') {
             $('#sidebar_yara').css({'backgroundColor': 'purple'})
         } else if (event.type == 'dragleave') {
@@ -199,7 +212,7 @@ $(document).ready(function () {
 
 });
 
-function add_yara_rules(rule_json) {
+function add_yara_rules(rule_json, yara_file_content) {
     let rule_file = JSON.parse(rule_json)
     let rules_html = ''
     let rule_id = 0
@@ -228,12 +241,15 @@ function add_yara_rules(rule_json) {
     $('#yara_rules').html(rules_html)
 
     $('#yara_panel').data('rules', rule_file)
+    $('#yara_panel').data('rules_content', yara_file_content)
     $(`li .rule_name`).on('click', function (e){
         debugger;
-        let rule_file = $('#yara_panel').data('rules')
-        let rule = rule_file.rules[e.target.title]
+        let processed_rules = $('#yara_panel').data('rules')
+        let rules_content = $('#yara_panel').data('rules_content')
+        let rule_object = processed_rules.rules[e.target.title]
+        let rule_text = rules_content.slice(rule_object.start_pos, rule_object.end_pos)
 
-        alert(e.target.toString())
+        alert(rule_text)
     })
 
 }
@@ -243,6 +259,7 @@ function match_rules(e) {
 
     let result = []
     let rule_file = $('#yara_panel').data('rules')
+    let rule_file_content = $('#yara_panel').data('rules_content')
     if (typeof rule_file == 'undefined') {
         alert('Please drop a yara file on the left panel first!')
         return null;
