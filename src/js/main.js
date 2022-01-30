@@ -322,13 +322,20 @@ function add_yara_rules(rule_json, yara_file_content) {
 
 }
 
+function is_rule_active(rule_record){
+    return $(rule_record).find('span.toggle input').is(':checked');
+}
+function get_rule_record(rule_name){
+    return $(`#yara_rules li[rule_key=${rule_name}]`)
+}
+
 function disable_rules(rule_file, impact_on,  rule_name){
     let rule = rule_file.rules[rule_name]
     let will_be_impacted = null;
     let rule_li = null;
     for(let i=0; i<impact_on[rule_name].length; i++) {
         will_be_impacted = impact_on[rule_name][i]
-        rule_li = $(`#yara_rules li[rule_key=${will_be_impacted.rule_name}]`)
+        rule_li = get_rule_record(will_be_impacted.rule_name)
         rule_li.find('input').prop('checked', false)
         disable_rules(rule_file, impact_on, will_be_impacted.rule_name)
 
@@ -341,7 +348,7 @@ function enable_rules(rule_file, impacted_by,  rule_name){
     let rule_li = null;
     for(let i=0; i<impacted_by[rule_name].length; i++) {
         has_impact = impacted_by[rule_name][i]
-        rule_li = $(`#yara_rules li[rule_key=${has_impact.rule_name}]`)
+        rule_li = get_rule_record(has_impact.rule_name)
         rule_li.find('input').prop('checked', true)
         enable_rules(rule_file, impacted_by, has_impact.rule_name)
     }
@@ -401,61 +408,64 @@ function match_rules(e) {
         }
 
         Object.keys(rule_file.rules).forEach(function (key) {
-            var rule = rule_file.rules[key]
-            worker.postMessage({file: file, rule_name: key, rule: rule, hex_editor_id: $(hex_editor).attr('id')})
-            worker.onmessage = function (event) {
-                result = event.data;
+            let rule_li = get_rule_record(key)
+            if(is_rule_active(rule_li) === true) {
+                alert(`${key} is active`)
+                var rule = rule_file.rules[key]
+                worker.postMessage({file: file, rule_name: key, rule: rule, hex_editor_id: $(hex_editor).attr('id')})
+                worker.onmessage = function (event) {
+                    result = event.data;
 
-                let matched_entity = null
+                    let matched_entity = null
 
-                let table = $(`#${result.hex_editor_id}`).data('table')
+                    let table = $(`#${result.hex_editor_id}`).data('table')
 
-                let count = 1;
+                    let count = 1;
 
-                let rows = []
-                for (let entry of result.strings) {
-                    let matched_string = entry[1]
-                    count = 1
-                    for (let j = 0; j < matched_string.length; j++) {
-                        if (matched_string[j].string.type === 'hex_exp_bytecode') {
-                            matched_entity = []
-                            for (let i = matched_string[j].start; i <= matched_string[j].end; i++) {
-                                matched_entity.push(file[i].toString(16))
+                    let rows = []
+                    for (let entry of result.strings) {
+                        let matched_string = entry[1]
+                        count = 1
+                        for (let j = 0; j < matched_string.length; j++) {
+                            if (matched_string[j].string.type === 'hex_exp_bytecode') {
+                                matched_entity = []
+                                for (let i = matched_string[j].start; i <= matched_string[j].end; i++) {
+                                    matched_entity.push(file[i].toString(16))
+                                }
+                                matched_entity = matched_entity.join(' ')
+                            } else if (matched_string[j].string.type === 'literal_string' ||
+                                matched_string[j].string.type === 'regex_expression_bytecode') {
+                                matched_entity = String.fromCharCode(...file.slice(matched_string[j].start,
+                                    matched_string[j].end + 1))
                             }
-                            matched_entity = matched_entity.join(' ')
-                        } else if (matched_string[j].string.type === 'literal_string' ||
-                            matched_string[j].string.type === 'regex_expression_bytecode') {
-                            matched_entity = String.fromCharCode(...file.slice(matched_string[j].start,
-                                matched_string[j].end + 1))
+                            if (count > 100)
+                                break
+
+                            rows.push({
+                                rule_name: result.rule_name,
+                                string: matched_string[j].string.str_name,
+                                match_no: `${count}/${matched_string.length}`,
+                                start_offset: matched_string[j].start.toString(16),
+                                end_offset: matched_string[j].end.toString(16),
+                                match: matched_entity
+                            })
+
+
+                            count += 1
+
+
+                            add_hex_marker(hex_editor, matched_string[j].start, matched_string[j].end)
+
                         }
-                        if(count >100)
-                            break
-
-                        rows.push({rule_name: result.rule_name,
-                            string: matched_string[j].string.str_name,
-                            match_no:`${count}/${matched_string.length}`,
-                            start_offset:matched_string[j].start.toString(16),
-                            end_offset:matched_string[j].end.toString(16),
-                            match:matched_entity})
-
-
-
-                        count += 1
-
-
-
-                        add_hex_marker(hex_editor, matched_string[j].start, matched_string[j].end)
 
                     }
+                    if (rows.length > 0) {
+                        table.addRow(rows, false)
+                        tableWrapper.trigger('lazytable:refresh');
+                    }
+                };
 
-                }
-                if(rows.length > 0) {
-                    table.addRow(rows, false)
-                    tableWrapper.trigger('lazytable:refresh');
-                }
-            };
-
-
+            }
         });
     }
 
