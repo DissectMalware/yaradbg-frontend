@@ -16,7 +16,8 @@ $(document).ready(function () {
             effect: "drop",
             duration: 500
         },
-        open: function() {
+        width: ($(window).width() > 1200) ? $(window).width() / 2 : $(window).width(),
+        open: function () {
             $(this).dialog('option', 'maxHeight', $(window).height());
         }
     }).css("white-space","pre-wrap");
@@ -47,7 +48,8 @@ $(document).ready(function () {
             effect: "drop",
             duration: 500
         },
-        open: function() {
+        width: ($(window).width() > 1200) ? $(window).width() / 3 : $(window).width(),
+        open: function () {
             $(this).dialog('option', 'maxHeight', $(window).height());
         }
     });
