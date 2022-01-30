@@ -181,7 +181,10 @@ $(document).ready(function () {
                             alert('Unknown error')
                         }
                     });
-                    $('#yara_panel').html(`<div><img src="img/yara-icon.png"/></div>
+                    $('#yara_panel').html(`
+                                <div class="yara_rule_header">
+                                    <img src="img/yara-icon.png"/>
+                                </div>
                                 <div class="spinner lds-facebook">
                                     <div></div>
                                     <div></div>
@@ -248,6 +251,8 @@ function add_yara_rules(rule_json, yara_file_content) {
     let rules_html = ''
     let rule_id = 0
     $('#yara_rules').addClass("yara_sig_panel")
+    let impact_on = {}
+    let impacted_by = {}
     Object.keys(rule_file.rules).forEach(function (rule_name) {
         rules_html += `
             <li id="rule_${rule_id}"  rule_key="${rule_name}">
@@ -265,17 +270,81 @@ function add_yara_rules(rule_json, yara_file_content) {
         rule_file.rules[rule_name].rule_id = `rule_${rule_id}`
         rule_file.rules[rule_name].rule_name = rule_name
         rule_id += 1
+
+        impacted_by[rule_name] = []
+        for( let i=0; i< rule_file.rules[rule_name].depends_on.length; i++) {
+            let impacted_by_rule_name = rule_file.rules[rule_name].depends_on[i]
+            impacted_by[rule_name].push(rule_file.rules[impacted_by_rule_name])
+        }
+
+        if(!(rule_name in impact_on)) {
+            impact_on[rule_name] = []
+        }
+        for( let i=0; i< rule_file.rules[rule_name].depends_on.length; i++) {
+            let impact_on_rule_name = rule_file.rules[rule_name].depends_on[i]
+            if((impact_on_rule_name in impact_on) == false){
+                impact_on[impact_on_rule_name] = []
+            }
+            impact_on[impact_on_rule_name].push(rule_file.rules[rule_name])
+        }
     });
+
     rules_html = `<ul class="yara_rules">
                     ${rules_html}
                   </ul>`
     $('#yara_rules').html(rules_html)
 
+    $('span.toggle input').on('change', function(e){
+        let check_box = $(e.target)
+        let rule_name = check_box.closest('li').find('span.rule_name').html()
+        let rule_file = $('#yara_panel').data('rules')
+        let impact_on = $('#yara_panel').data('impact_on')
+        let impacted_by = $('#yara_panel').data('impacted_by')
+
+        if(check_box.is(':checked')) {
+            enable_rules(rule_file, impacted_by, rule_name)
+        }
+        else{
+            disable_rules(rule_file, impact_on, rule_name)
+        }
+
+    });
+
+    $('.yara_rule_header').html(` <img src="img/yara-icon.png"/>
+                                  <img class="yara_dependency_graph" src="img/dependencies.png"/>`)
+
     $('#yara_panel').data('rules', rule_file)
+    $('#yara_panel').data('impact_on', impact_on)
+    $('#yara_panel').data('impacted_by', impacted_by)
     $('#yara_panel').data('rules_content', yara_file_content)
     $(`li .rule_name`).on('click', rule_name_click_handler)
     $(`li .rule_eval_details`).on('click', rule_eval_detail_click_handler)
 
+}
+
+function disable_rules(rule_file, impact_on,  rule_name){
+    let rule = rule_file.rules[rule_name]
+    let will_be_impacted = null;
+    let rule_li = null;
+    for(let i=0; i<impact_on[rule_name].length; i++) {
+        will_be_impacted = impact_on[rule_name][i]
+        rule_li = $(`#yara_rules li[rule_key=${will_be_impacted.rule_name}]`)
+        rule_li.find('input').prop('checked', false)
+        disable_rules(rule_file, impact_on, will_be_impacted.rule_name)
+
+    }
+}
+
+function enable_rules(rule_file, impacted_by,  rule_name){
+    let rule = rule_file.rules[rule_name]
+    let has_impact = null;
+    let rule_li = null;
+    for(let i=0; i<impacted_by[rule_name].length; i++) {
+        has_impact = impacted_by[rule_name][i]
+        rule_li = $(`#yara_rules li[rule_key=${has_impact.rule_name}]`)
+        rule_li.find('input').prop('checked', true)
+        enable_rules(rule_file, impacted_by, has_impact.rule_name)
+    }
 }
 
 function rule_name_click_handler(e) {

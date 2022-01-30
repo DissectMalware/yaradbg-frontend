@@ -396,3 +396,15 @@ span.rule_name{
 #yara_rule_dialog p{
     font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;
 }
+
+div.yara_rule_header{
+    display:flex;
+    margin-bottom: 7px;
+}
+
+img.yara_dependency_graph{
+    margin-left: auto;
+    margin-top: 6px;
+    margin-bottom: 7px;
+    cursor: pointer;
+}
