@@ -385,7 +385,7 @@ div#yara_rules li{
 }
 
 img.rule_eval_details{
-    margin-right: 5px;
+    margin-left: 5px;
     cursor: pointer;
 }
 
@@ -403,9 +403,6 @@ div.yara_rule_header{
 }
 
 img.yara_dependency_graph{
-    margin-left: auto;
-    margin-top: 6px;
-    margin-bottom: 7px;
     cursor: pointer;
 }
 
@@ -413,4 +410,10 @@ img.yara_dependency_graph{
     width: calc(100% - 7px);
     height: 20px;
     margin-bottom: 10px;
+}
+
+#yara_rule_dependency_dialog div.rule:hover {
+    cursor: pointer;
+    background-color: purple;
+    color: whitesmoke;
 }

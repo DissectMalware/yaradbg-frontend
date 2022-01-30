@@ -37,6 +37,22 @@ $(document).ready(function () {
     }).css("white-space","pre-wrap");
 
 
+    $( "#yara_rule_dependency_dialog" ).dialog({
+        autoOpen: false,
+        show: {
+            effect: "drop",
+            duration: 500
+        },
+        hide: {
+            effect: "drop",
+            duration: 500
+        },
+        open: function() {
+            $(this).dialog('option', 'maxHeight', $(window).height());
+        }
+    });
+
+
     outerLayout = $('body').layout({
         center__paneSelector: ".outer-center"
         , west__paneSelector: ".outer-west"
@@ -281,6 +297,7 @@ function add_yara_rules(rule_json, yara_file_content) {
             <li id="rule_${rule_id}"  rule_key="${rule_name}">
                 <span></span>
                 <span class="rule_name" title="${rule_name}">${rule_name}</span>
+                <img class="yara_dependency_graph" src="img/dependencies.png" title="Rule Dependencies"/>
                 <img class="rule_eval_details" src="./img/debug.png" title="Eval Steps"/>
                 <span class="toggle">
                     <label class="switch">
@@ -333,8 +350,7 @@ function add_yara_rules(rule_json, yara_file_content) {
 
     });
 
-    $('.yara_rule_header').html(` <img src="img/yara-icon.png"/>
-                                  <img class="yara_dependency_graph" src="img/dependencies.png"/>`)
+    $('.yara_rule_header').html(` <img src="img/yara-icon.png"/>`)
 
     $('#yara_panel').data('rules', rule_file)
     $('#yara_panel').data('impact_on', impact_on)
@@ -342,6 +358,7 @@ function add_yara_rules(rule_json, yara_file_content) {
     $('#yara_panel').data('rules_content', yara_file_content)
     $(`li .rule_name`).on('click', rule_name_click_handler)
     $(`li .rule_eval_details`).on('click', rule_eval_detail_click_handler)
+    $(`li .yara_dependency_graph`).on('click', yara_dependency_graph_click_handler)
 
 }
 
@@ -401,6 +418,60 @@ function rule_eval_detail_click_handler(e){
 
 }
 
+function yara_dependency_graph_click_handler(e) {
+    let yara_rule_li = e.target.closest('li')
+    let rule_name = $(yara_rule_li).attr('rule_key')
+    show_rule_dependency(rule_name)
+}
+
+function show_rule_dependency(rule_name){
+    let impact_on = $('#yara_panel').data('impact_on')
+    let impacted_by = $('#yara_panel').data('impacted_by')
+
+    let impact_on_rules = []
+    let impacted_by_rules = []
+
+    get_related_rule_names(impact_on, rule_name, impact_on_rules)
+    get_related_rule_names(impacted_by, rule_name, impacted_by_rules)
+
+
+    $("#yara_rule_dependency_dialog").html(`<div>
+                                                <b>Rules depend on ${rule_name}:</b><br />
+                                                ${get_rule_names_html(impact_on_rules, '<div class="rule">{{rule_name}}</div>' ) }
+                                            </div>
+                                            <br />
+                                            <div>
+                                                <b>${rule_name} depends on:</b><br />
+                                                ${get_rule_names_html(impacted_by_rules, '<div class="rule">{{rule_name}}</div>')}
+                                            </div>`)
+
+    $("#yara_rule_dependency_dialog div.rule").on('click', function(e){
+        show_rule_dependency($(this).text())
+    })
+    $("#yara_rule_dependency_dialog").dialog("option", "title", ` Dependencies of ${rule_name}`).dialog("open")
+}
+
+function get_related_rule_names(relationships, rule_name, result){
+    if(rule_name in relationships){
+        for(let i=0; i< relationships[rule_name].length; i++){
+            result.push(relationships[rule_name][i].rule_name)
+            get_related_rule_names(relationships,relationships[rule_name][i].rule_name, result )
+        }
+    }
+}
+
+function get_rule_names_html(rule_names, rule_name_template){
+    let result = ''
+    if(rule_names.length == 0) {
+        result = '(None)'
+        return result
+    }
+
+    for(let i=0; i<rule_names.length; i++){
+        result += rule_name_template.replace('{{rule_name}}', rule_names[i])
+    }
+    return result
+}
 
 function match_rules(e) {
 
@@ -433,7 +504,6 @@ function match_rules(e) {
         Object.keys(rule_file.rules).forEach(function (key) {
             let rule_li = get_rule_record(key)
             if(is_rule_active(rule_li) === true) {
-                alert(`${key} is active`)
                 var rule = rule_file.rules[key]
                 worker.postMessage({file: file, rule_name: key, rule: rule, hex_editor_id: $(hex_editor).attr('id')})
                 worker.onmessage = function (event) {
