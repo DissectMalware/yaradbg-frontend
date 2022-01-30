@@ -428,8 +428,8 @@ function show_rule_dependency(rule_name){
     let impact_on = $('#yara_panel').data('impact_on')
     let impacted_by = $('#yara_panel').data('impacted_by')
 
-    let impact_on_rules = []
-    let impacted_by_rules = []
+    let impact_on_rules = new Set()
+    let impacted_by_rules = new Set()
 
     get_related_rule_names(impact_on, rule_name, impact_on_rules)
     get_related_rule_names(impacted_by, rule_name, impacted_by_rules)
@@ -454,22 +454,22 @@ function show_rule_dependency(rule_name){
 function get_related_rule_names(relationships, rule_name, result){
     if(rule_name in relationships){
         for(let i=0; i< relationships[rule_name].length; i++){
-            result.push(relationships[rule_name][i].rule_name)
+            result.add(relationships[rule_name][i].rule_name)
             get_related_rule_names(relationships,relationships[rule_name][i].rule_name, result )
         }
     }
 }
 
-function get_rule_names_html(rule_names, rule_name_template){
-    let result = ''
-    if(rule_names.length == 0) {
+function get_rule_names_html(rule_names, rule_name_template) {
+    var result = ''
+    if (rule_names.size == 0) {
         result = '(None)'
         return result
     }
 
-    for(let i=0; i<rule_names.length; i++){
-        result += rule_name_template.replace('{{rule_name}}', rule_names[i])
-    }
+    rule_names.forEach(function (item) {
+        result += rule_name_template.replace('{{rule_name}}', item)
+    });
     return result
 }
 
