@@ -376,7 +376,7 @@ table.debugWin td {
 }
 
 .yara_sig_panel {
-    height: calc(100% - 85px);
+    height: calc(100% - 115px);
     overflow-y: auto;
 }
 
@@ -407,4 +407,10 @@ img.yara_dependency_graph{
     margin-top: 6px;
     margin-bottom: 7px;
     cursor: pointer;
+}
+
+#filter_yara_rules{
+    width: calc(100% - 7px);
+    height: 20px;
+    margin-bottom: 10px;
 }

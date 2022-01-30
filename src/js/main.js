@@ -185,6 +185,7 @@ $(document).ready(function () {
                                 <div class="yara_rule_header">
                                     <img src="img/yara-icon.png"/>
                                 </div>
+                                <div><input id="filter_yara_rules" type="text" placeholder="Filter Yara Rules" /></div>
                                 <div class="spinner lds-facebook">
                                     <div></div>
                                     <div></div>
@@ -196,6 +197,8 @@ $(document).ready(function () {
                                     </span>
                                 </div>
                     `)
+
+                    $('#filter_yara_rules').on('input propertychange', filter_yara_rules_change_handler)
 
                 }
 
@@ -245,6 +248,26 @@ $(document).ready(function () {
 
 
 });
+
+function filter_yara_rules_change_handler(e){
+    let text = $(this).val()
+    let rule_name = null
+    let index = null
+    $(`#yara_rules li`).each(function(item){
+        if(text.length == 0)
+            $(this).css({'display':''})
+        else {
+            text = text.toLowerCase()
+            rule_name = $(this).attr('rule_key').toLowerCase()
+            index = rule_name.search(text)
+            if (index >= 0) {
+                $(this).css({'display':''})
+            } else {
+                $(this).css({'display':'None'})
+            }
+        }
+    })
+}
 
 function add_yara_rules(rule_json, yara_file_content) {
     let rule_file = JSON.parse(rule_json)
