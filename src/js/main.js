@@ -331,6 +331,9 @@ function add_yara_rules(rule_json, yara_file_content) {
         }
     });
 
+    let sorted_rules = topological_sort(rule_file.rules, impact_on)
+    rule_file.rules = sorted_rules
+
     rules_html = `<ul class="yara_rules">
                     ${rules_html}
                   </ul>`
@@ -362,6 +365,43 @@ function add_yara_rules(rule_json, yara_file_content) {
     $(`li .rule_eval_details`).on('click', rule_eval_detail_click_handler)
     $(`li .yara_dependency_graph`).on('click', yara_dependency_graph_click_handler)
 
+}
+
+function topological_sort(rules, impact_on){
+    let stack = []
+    var result = []
+    let visited = new Set()
+    Object.entries(rules).forEach(entry => {
+        var [rule_name, rule] = entry;
+        rule.color = 0 // white
+    });
+
+    Object.entries(rules).forEach(entry => {
+        var [rule_name, rule] = entry;
+        if(rule.color == 0 ) {
+            dfs(rule, rules, impact_on, result)
+        }
+        else if(rule.color == 1 ) {
+            alert('Error: Cycle detected in dependencies. Check ${rule_name}')
+        }
+    });
+
+
+    return result.reverse()
+}
+
+function dfs(rule, rules, impact_on, result) {
+    rule.color = 1 // grey
+    let rule_name = rule.rule_name
+    for (let i = 0; i<impact_on[rule_name].length; i++) {
+        if (impact_on[rule_name][i].color == 0) {
+            dfs(impact_on[rule_name][i], rules, impact_on, result)
+        } else if (impact_on[rule_name][i].color == 1) {
+            alert(`Error: Cycle detected in dependencies. Check ${rule_name}`)
+        }
+    }
+    rule.color = 2
+    result.push(rule)
 }
 
 function is_rule_active(rule_record){
