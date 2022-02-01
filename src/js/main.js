@@ -349,6 +349,7 @@ function add_yara_rules(rule_json, yara_file_content) {
         }
         else{
             disable_rules(rule_file, impact_on, rule_name)
+            check_box.closest('li').removeClass('not_matched').removeClass('matched')
         }
 
     });
