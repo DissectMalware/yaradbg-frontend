@@ -98,6 +98,21 @@ $(document).ready(function () {
             closable: true,
             activate: function (event, ui) {
                 if (ui.newPanel.hasClass('hexeditor_panel')) {
+
+
+                    let evaluation_result = $(ui.newPanel).data('evaluation_result')
+
+                    if(typeof evaluation_result === 'undefined'){
+                        $(`li[rule_key]`).removeClass('matched')
+                        $(`li[rule_key]`).removeClass('not_matched')
+                    }
+                    else{
+                        Object.keys(evaluation_result).forEach(function (key){
+                            $(`li[rule_key=${key}]`).addClass(`${evaluation_result[key]?'matched': 'not_matched'}`)
+                        })
+
+                    }
+
                     var file = ui.newPanel.data('attached_file')
                     if (file != undefined) {
                         var reader = new FileReader();
@@ -563,6 +578,15 @@ function match_rules(e) {
             let final_condition_eval = final_condition.result.val
 
             let rule_name= result.rule_name
+
+            let evaluation_result = $(`#${result.hex_editor_id}`).data('evaluation_result')
+''
+            if(typeof evaluation_result === 'undefined'){
+                evaluation_result = {}
+                $(`#${result.hex_editor_id}`).data('evaluation_result', evaluation_result)
+            }
+
+            evaluation_result[rule_name] = final_condition_eval
 
             // $(`li[rule_key=${rule_name}]`).css({'background-color': `${final_verdict?'green': 'red'}`})
             $(`li[rule_key=${rule_name}]`).addClass(`${final_condition_eval?'matched': 'not_matched'}`)
