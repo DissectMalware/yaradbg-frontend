@@ -135,8 +135,6 @@ $(document).ready(function () {
 
                         }
                         reader.readAsArrayBuffer(file);
-                    } else if (ui.newPanel.hasClass("hexeditor_demo")) {
-                        load_hex_editor(ui.newPanel.children('div')[0].id, [])
                     }
                 }
             }
@@ -332,7 +330,7 @@ function add_yara_rules(rule_json, yara_file_content) {
     });
 
     let sorted_rules = topological_sort(rule_file.rules, impact_on)
-    rule_file.rules = sorted_rules
+    rule_file.sorted_rules = sorted_rules
 
     rules_html = `<ul class="yara_rules">
                     ${rules_html}
@@ -543,65 +541,80 @@ function match_rules(e) {
             table.clearData();
         }
 
-        Object.keys(rule_file.rules).forEach(function (key) {
-            let rule_li = get_rule_record(key)
+        let active_rules = {}
+
+        Object.keys(rule_file.sorted_rules).forEach(function (key) {
+            let rule_name = rule_file.sorted_rules[key].rule_name
+            let rule_li = get_rule_record(rule_name)
             if(is_rule_active(rule_li) === true) {
-                var rule = rule_file.rules[key]
-                worker.postMessage({file: file, rule_name: key, rule: rule, hex_editor_id: $(hex_editor).attr('id')})
-                worker.onmessage = function (event) {
-                    result = event.data;
-
-                    let matched_entity = null
-
-                    let table = $(`#${result.hex_editor_id}`).data('table')
-
-                    let count = 1;
-
-                    let rows = []
-                    for (let entry of result.strings) {
-                        let matched_string = entry[1]
-                        count = 1
-                        for (let j = 0; j < matched_string.length; j++) {
-                            if (matched_string[j].string.type === 'hex_exp_bytecode') {
-                                matched_entity = []
-                                for (let i = matched_string[j].start; i <= matched_string[j].end; i++) {
-                                    matched_entity.push(file[i].toString(16))
-                                }
-                                matched_entity = matched_entity.join(' ')
-                            } else if (matched_string[j].string.type === 'literal_string' ||
-                                matched_string[j].string.type === 'regex_expression_bytecode') {
-                                matched_entity = String.fromCharCode(...file.slice(matched_string[j].start,
-                                    matched_string[j].end + 1))
-                            }
-                            if (count > 100)
-                                break
-
-                            rows.push({
-                                rule_name: result.rule_name,
-                                string: matched_string[j].string.str_name,
-                                match_no: `${count}/${matched_string.length}`,
-                                start_offset: matched_string[j].start.toString(16),
-                                end_offset: matched_string[j].end.toString(16),
-                                match: matched_entity
-                            })
-
-
-                            count += 1
-
-
-                            add_hex_marker(hex_editor, matched_string[j].start, matched_string[j].end)
-
-                        }
-
-                    }
-                    if (rows.length > 0) {
-                        table.addRow(rows, false)
-                        tableWrapper.trigger('lazytable:refresh');
-                    }
-                };
-
+                active_rules[rule_name] = rule_file.sorted_rules[key]
             }
         });
+
+        worker.postMessage({file: file, rules: active_rules, hex_editor_id: $(hex_editor).attr('id')})
+        worker.onmessage = function (event) {
+            let rule_file = $('#yara_panel').data('rules')
+
+            let result = event.data;
+
+            let final_condition = result.condition[result.condition.length -1]
+
+            let final_condition_eval = final_condition.result.val
+
+            let rule_name= result.rule_name
+
+            // $(`li[rule_key=${rule_name}]`).css({'background-color': `${final_verdict?'green': 'red'}`})
+            $(`li[rule_key=${rule_name}]`).addClass(`${final_condition_eval?'matched': 'not_matched'}`)
+
+            let matched_entity = null
+
+            let table = $(`#${result.hex_editor_id}`).data('table')
+
+            let count = 1;
+
+            let rows = []
+            for (let entry of result.strings) {
+                let matched_string = entry[1]
+                count = 1
+                for (let j = 0; j < matched_string.length; j++) {
+                    if (matched_string[j].string.type === 'hex_exp_bytecode') {
+                        matched_entity = []
+                        for (let i = matched_string[j].start; i <= matched_string[j].end; i++) {
+                            matched_entity.push(file[i].toString(16))
+                        }
+                        matched_entity = matched_entity.join(' ')
+                    } else if (matched_string[j].string.type === 'literal_string' ||
+                        matched_string[j].string.type === 'regex_expression_bytecode') {
+                        matched_entity = String.fromCharCode(...file.slice(matched_string[j].start,
+                            matched_string[j].end + 1))
+                    }
+                    if (count > 100)
+                        break
+
+                    rows.push({
+                        rule_name: result.rule_name,
+                        string: matched_string[j].string.str_name,
+                        match_no: `${count}/${matched_string.length}`,
+                        start_offset: matched_string[j].start.toString(16),
+                        end_offset: matched_string[j].end.toString(16),
+                        match: matched_entity
+                    })
+
+
+                    count += 1
+
+
+                    add_hex_marker(hex_editor, matched_string[j].start, matched_string[j].end)
+
+                }
+
+            }
+            if (rows.length > 0) {
+                table.addRow(rows, false)
+                tableWrapper.trigger('lazytable:refresh');
+            }
+        };
+
     }
 
     return result

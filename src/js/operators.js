@@ -1,4 +1,4 @@
-export function eval_condition(file, condition_tasks, evaluated_rule) {
+export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
     debugger;
     let result = null
     let task = null
@@ -58,6 +58,9 @@ export function eval_condition(file, condition_tasks, evaluated_rule) {
                 case  'int32be':
                     result = integer_operator(task.args[0], file, 4, true, false)
                     break
+                case 'identifier':
+                    result = is_identifier_matched(task.args[0], rules)
+                    break
 
             }
             if (result !== null) {
@@ -68,14 +71,31 @@ export function eval_condition(file, condition_tasks, evaluated_rule) {
             // token
         }
     }
+
+    evaluated_rule.condition = condition_tasks
     debugger;
 }
+
 
 function get_arg(arg, evaluated_tasks) {
     if (arg.name === 'Task') {
         return evaluated_tasks.get(arg.val)
     } else {
         return arg
+    }
+}
+
+function is_identifier_matched(arg, rules){
+
+    let identifier_matched = false
+    if (rules.hasOwnProperty(arg.val)){
+        identifier_matched = rules[arg.val].condition[rules[arg.val].condition.length -1].result.val
+    }
+    return {
+        name: 'identifier_res',
+        val:identifier_matched,
+        start_pos: arg.start_pos,
+        end_pos: arg.end_pos
     }
 }
 
@@ -171,25 +191,27 @@ function eq_operator(arg_left, arg_right) {
 
 function integer_operator(arg_left, file, byte_count, signed = false, little_endian = true) {
 
-    let val = undefined
+    let val = NaN
 
     let offset = parseInt(arg_left.val)
-    let data_view = new DataView(file.buffer, offset, byte_count)
-    switch (byte_count) {
-        case 1:
-            if (offset < file.length)
-                val = signed ? data_view.getInt8(0) : data_view.getUint8(0)
-            break
-        case 2:
-            if (offset < file.length - 1)
-                val = signed ? data_view.getInt16(0, little_endian) :
-                    data_view.getUint16(0, little_endian)
-            break
-        case 4:
-            if (offset < file.length - 3)
-                val = signed ? data_view.getInt32(0, little_endian) :
-                    data_view.getUint32(0, little_endian)
-            break
+    if(offset+byte_count < file.buffer.byteLength) {
+        let data_view = new DataView(file.buffer, offset, byte_count)
+        switch (byte_count) {
+            case 1:
+                if (offset < file.length)
+                    val = signed ? data_view.getInt8(0) : data_view.getUint8(0)
+                break
+            case 2:
+                if (offset < file.length - 1)
+                    val = signed ? data_view.getInt16(0, little_endian) :
+                        data_view.getUint16(0, little_endian)
+                break
+            case 4:
+                if (offset < file.length - 3)
+                    val = signed ? data_view.getInt32(0, little_endian) :
+                        data_view.getUint32(0, little_endian)
+                break
+        }
     }
     return {
         name: `${signed ? "" : "u"}int${byte_count * 8}${little_endian ? "" : "be"}_res`,

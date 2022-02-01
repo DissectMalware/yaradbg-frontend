@@ -417,3 +417,11 @@ img.yara_dependency_graph{
     background-color: purple;
     color: whitesmoke;
 }
+
+li.matched{
+    background-color: lightgreen;
+}
+
+li.not_matched{
+    background-color: lightsalmon;
+}

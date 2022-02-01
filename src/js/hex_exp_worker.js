@@ -4,24 +4,25 @@ if( 'function' === typeof importScripts) {
 
     self.onmessage = function (e) {
         let data = e.data
-        let res = match_rule(data.file, data.rule)
-        res.rule_name = data.rule_name
-        res.hex_editor_id = data.hex_editor_id
-        self.postMessage(res);
+        Object.keys(data.rules).forEach(function (key) {
+            let res = match_rule(data.file, data.rules, key)
+            res.rule_name = key
+            res.hex_editor_id = data.hex_editor_id
+            self.postMessage(res);
+        });
     }
 
-    function match_rule(file, rule) {
+    function match_rule(file, rules, rule_name) {
+        debugger;
         let evaluated_rule = {strings: new Map(), condition: []}
+        let rule = rules[rule_name]
 
-        Object.keys(rule).forEach(function (key) {
-
-            if (key == 'string') {
-                match_strings(rule[key], file, evaluated_rule.strings)
-            } else if (key == 'condition') {
-                operators.eval_condition(file, rule[key], evaluated_rule)
-            }
-        });
-
+        if (typeof rule.string !== 'undefiend') {
+            match_strings(rule.string, file, evaluated_rule.strings)
+        }
+        if (typeof rule.condition !== 'undefiend') {
+            operators.eval_condition(file, rule.condition, rules, evaluated_rule)
+        }
         return evaluated_rule
     }
 
