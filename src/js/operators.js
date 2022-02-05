@@ -28,35 +28,35 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                     break
                 case  'uint8':
                 case  'uint8be':
-                    result = integer_operator(task.args[0], file, 1)
+                    result = integer_operator(task.args[1], file, 1)
                     break
                 case  'uint16':
-                    result = integer_operator(task.args[0], file, 2)
+                    result = integer_operator(task.args[1], file, 2)
                     break
                 case  'uint32':
-                    result = integer_operator(task.args[0], file, 4)
+                    result = integer_operator(task.args[1], file, 4)
                     break
                 case  'uint16be':
-                    result = integer_operator(task.args[0], file, 2, false, false)
+                    result = integer_operator(task.args[1], file, 2, false, false)
                     break
                 case  'uint32be':
-                    result = integer_operator(task.args[0], file, 4, false, false)
+                    result = integer_operator(task.args[1], file, 4, false, false)
                     break
                 case  'int8':
                 case  'int8be':
-                    result = integer_operator(task.args[0], file, 1, true)
+                    result = integer_operator(task.args[1], file, 1, true)
                     break
                 case  'int16':
-                    result = integer_operator(task.args[0], file, 2, true)
+                    result = integer_operator(task.args[1], file, 2, true)
                     break
                 case  'int32':
-                    result = integer_operator(task.args[0], file, 4, true)
+                    result = integer_operator(task.args[1], file, 4, true)
                     break
                 case  'int16be':
-                    result = integer_operator(task.args[0], file, 2, true, false)
+                    result = integer_operator(task.args[1], file, 2, true, false)
                     break
                 case  'int32be':
-                    result = integer_operator(task.args[0], file, 4, true, false)
+                    result = integer_operator(task.args[1], file, 4, true, false)
                     break
                 case 'identifier':
                     result = is_identifier_matched(task.args[0], rules)
