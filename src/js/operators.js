@@ -102,10 +102,11 @@ function is_identifier_matched(arg, rules){
 function of_operator(arg_left, arg_right, strings) {
     let string_set = []
 
+    let args = 0
     if (arg_left.name === 'ALL') {
-        arg_left = strings.size
+        args = strings.size
     } else {
-        arg_left = get_number(arg_left.val)
+        args = get_number(arg_left.val)
     }
 
     if (arg_right.name === 'THEM') {
@@ -122,11 +123,11 @@ function of_operator(arg_left, arg_right, strings) {
     }
 
     let res = false
-    if (arg_left > 0) {
+    if (args > 0) {
         for (let i = 0; i < string_set.length; i++) {
             if (strings.get(string_set[i]).length > 0) {
-                arg_left -= 1
-                if (arg_left === 0) {
+                args -= 1
+                if (args === 0) {
                     res = true
                     break
                 }
@@ -138,7 +139,7 @@ function of_operator(arg_left, arg_right, strings) {
 
     return {
         name: 'of_res',
-        value: res,
+        val: res,
         start_pos: arg_left.start_pos,
         end_pos: arg_left.end_pos
     }

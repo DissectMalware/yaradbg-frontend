@@ -425,3 +425,19 @@ li.matched{
 li.not_matched{
     background-color: lightsalmon;
 }
+
+#yara_rule_eval_dialog table, #yara_rule_eval_dialog table tr{
+    width: 100%;
+}
+
+td.condition{
+    width: calc(100% - 150px);
+}
+
+td.condition_res{
+    width: 150px
+}
+
+#yara_rule_eval_dialog table tr:nth-child(even){
+    background-color: lightsteelblue;
+}

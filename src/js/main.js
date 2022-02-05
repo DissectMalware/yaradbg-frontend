@@ -32,6 +32,7 @@ $(document).ready(function () {
             effect: "drop",
             duration: 500
         },
+        width: ($(window).width() > 1200) ? $(window).width() / 3 : $(window).width(),
         open: function() {
             $(this).dialog('option', 'maxHeight', $(window).height());
         }
@@ -108,7 +109,7 @@ $(document).ready(function () {
                     }
                     else{
                         Object.keys(evaluation_result).forEach(function (key){
-                            $(`li[rule_key=${key}]`).addClass(`${evaluation_result[key]?'matched': 'not_matched'}`)
+                            $(`li[rule_key=${key}]`).addClass(`${evaluation_result[key].eval_res?'matched': 'not_matched'}`)
                         })
 
                     }
@@ -452,24 +453,59 @@ function enable_rules(rule_file, impacted_by,  rule_name){
 
 function rule_name_click_handler(e) {
     debugger;
-    let processed_rules = $('#yara_panel').data('rules')
-    let rules_content = $('#yara_panel').data('rules_content')
-    let rule_object = processed_rules.rules[e.target.title]
-    let rule_text = rules_content.slice(rule_object.start_pos, rule_object.end_pos)
-    $( "#yara_rule_dialog" ).html(`<p>${rule_text}</p>`)
+    let rule = get_rule_text(e.target.title)
+    $( "#yara_rule_dialog" ).html(`<p>${rule.rule_text}</p>`)
     $( "#yara_rule_dialog" ).dialog("option","title",e.target.title).dialog( "open" );
 }
 
+function get_rule_text(rule_name){
+    let rules = $('#yara_panel').data('rules')
+    let rules_content = $('#yara_panel').data('rules_content')
+    let rule_object = rules.rules[rule_name]
+    let rule_text = rules_content.slice(rule_object.start_pos, rule_object.end_pos)
+    return {start_pos: rule_object.start_pos, rule_text: rule_text}
+}
 function rule_eval_detail_click_handler(e){
     debugger;
-    let processed_rules = $('#yara_panel').data('rules')
-    let yara_rule_li = e.target.closest('li')
-    let rule_object = processed_rules.rules[$(yara_rule_li).attr('rule_key')]
-    if( typeof rule_object.result === 'undefined'){
-        alert("You should run the rules against a file to see evaluation details")
+    let active_tab = $('.hex_editor_tab.ui-tabs-active a')
+    let active_tab_panel_id = active_tab.attr('href')
+    let evaluation_result = $(active_tab_panel_id).data('evaluation_result')
+
+    if( typeof evaluation_result === 'undefined'){
+        alert("You should run the rule against the current file to see the evaluation details")
         return
     }
-    $( "#yara_rule_eval_dialog" ).html(`<p>test</p>`)
+
+    let yara_rule_li = e.target.closest('li')
+    let rule_name = $(yara_rule_li).attr('rule_key')
+    let rule = get_rule_text(rule_name)
+    let rule_eval_object = evaluation_result[$(yara_rule_li).attr('rule_key')]
+    if( typeof rule_eval_object === 'undefined'){
+        alert("You should run the rule against the current file to see the evaluation details")
+        return
+    }
+
+    let condition_html = ''
+    let condition_text = ''
+    let condition_start = 0
+    let condition_end = 0
+    let condition_val = 0
+    for(let i=0; i<rule_eval_object.eval_details.condition.length; i++){
+        condition_start = rule_eval_object.eval_details.condition[i].start_pos - rule.start_pos
+        condition_end = rule_eval_object.eval_details.condition[i].end_pos - rule.start_pos
+        condition_text = rule.rule_text.slice(condition_start, condition_end)
+        if('result' in rule_eval_object.eval_details.condition[i])
+            condition_val = rule_eval_object.eval_details.condition[i].result.val
+        else
+            condition_val = "Unsupported Condition"
+        if(Number.isInteger(condition_val)){
+            condition_val = `0x${condition_val.toString(16)}`
+        }
+        condition_html += `<tr><td class="condition">${condition_text}</td>
+                            <td class="condition_res">${condition_val}</td></tr>`
+    }
+
+    $( "#yara_rule_eval_dialog" ).html(`<table>${condition_html}</table>`)
     $( "#yara_rule_eval_dialog" ).dialog("option","title",$(yara_rule_li).attr('rule_key')).dialog( "open" );
 
 }
@@ -586,7 +622,7 @@ function match_rules(e) {
                 $(`#${result.hex_editor_id}`).data('evaluation_result', evaluation_result)
             }
 
-            evaluation_result[rule_name] = final_condition_eval
+            evaluation_result[rule_name] = {eval_res :final_condition_eval, eval_details: result}
 
             // $(`li[rule_key=${rule_name}]`).css({'background-color': `${final_verdict?'green': 'red'}`})
             $(`li[rule_key=${rule_name}]`).addClass(`${final_condition_eval?'matched': 'not_matched'}`)
