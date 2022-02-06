@@ -103,11 +103,9 @@ $(document).ready(function () {
 
                     let evaluation_result = $(ui.newPanel).data('evaluation_result')
 
-                    if(typeof evaluation_result === 'undefined'){
-                        $(`li[rule_key]`).removeClass('matched')
-                        $(`li[rule_key]`).removeClass('not_matched')
-                    }
-                    else{
+                    $(`li[rule_key]`).removeClass('matched not_matched')
+
+                    if(typeof evaluation_result !== 'undefined'){
                         Object.keys(evaluation_result).forEach(function (key){
                             $(`li[rule_key=${key}]`).addClass(`${evaluation_result[key].eval_res?'matched': 'not_matched'}`)
                         })
@@ -625,7 +623,7 @@ function match_rules(e) {
 
             evaluation_result[rule_name] = {eval_res :final_condition_eval, eval_details: result}
 
-            // $(`li[rule_key=${rule_name}]`).css({'background-color': `${final_verdict?'green': 'red'}`})
+            $(`li[rule_key=${rule_name}]`).removeClass('matched not_matched')
             $(`li[rule_key=${rule_name}]`).addClass(`${final_condition_eval?'matched': 'not_matched'}`)
 
             let matched_entity = null
