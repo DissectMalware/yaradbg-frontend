@@ -8,7 +8,7 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
         result = null
         if ('op' in task) {
             for (let j = 0; j < task.args.length; j++) {
-                task.args[j] = get_arg(task.args[j], evaluated_task)
+                task.args[j] = get_arg(task.args[j], evaluated_task, file)
             }
             switch (task.op) {
                 case 'of':
@@ -61,6 +61,13 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                 case 'identifier':
                     result = is_identifier_matched(task.args[0], rules)
                     break
+                case '<':
+                case '>':
+                case '==':
+                case '!=':
+                    result = logical_comparison(task.op, task.args[0], task.args[1])
+                    break
+
 
             }
             if (result !== null) {
@@ -76,11 +83,33 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
     debugger;
 }
 
+function logical_comparison(op, arg_a, arg_b){
+    const ops = {
+        '<': function (x, y) { return x < y },
+        '>': function (x, y) { return x >  y },
+        '==': function (x, y) { return x == y },
+        '!=': function (x, y) { return x != y }
+    }
 
-function get_arg(arg, evaluated_tasks) {
+    return {
+        name: 'logical_comp_res',
+        val: ops[op](parseInt(arg_a.val), parseInt(arg_b.val)),
+        start_pos: arg_a.start_pos,
+        end_pos: arg_b.end_pos
+    }
+
+}
+
+
+function get_arg(arg, evaluated_tasks, file) {
     if (arg.name === 'Task') {
         return evaluated_tasks.get(arg.val)
-    } else {
+    }
+    else if (arg.name === 'FILESIZE'){
+        arg.val = file.length
+        return arg
+    }
+    else {
         return arg
     }
 }
