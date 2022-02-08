@@ -238,7 +238,7 @@ if( 'function' === typeof importScripts) {
         let skip = false
         for (let i = start_index; i < file_content.length; i++) {
             skip = false;
-            for (let t = 0; t < current_state.length & skip == false; t++) {
+            for (let t = 0; t < current_state.length && skip == false; t++) {
                 c_prgcounter = current_state[t].pc
                 instruction = instructions[c_prgcounter]
                 op = instruction[0]
