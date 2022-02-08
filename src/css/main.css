@@ -441,3 +441,17 @@ td.condition_res{
 #yara_rule_eval_dialog table tr:nth-child(even){
     background-color: lightsteelblue;
 }
+
+#main_tab h1 { font-family: 'Open Sans Condensed', sans-serif; font-size: 64px; }
+
+#main_tab p { font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 28px; margin: 0 0 12px; }
+
+#main_tab{
+    overflow-y: auto;
+}
+
+#main_tab img{
+    height: calc(100% - 250px);
+    vertical-align: center;
+}
+
