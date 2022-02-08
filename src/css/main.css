@@ -452,6 +452,8 @@ td.condition_res{
 
 #main_tab img{
     height: calc(100% - 250px);
-    vertical-align: center;
+    display: block;
+    margin: auto;
+
 }
 
