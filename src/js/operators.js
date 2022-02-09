@@ -2,13 +2,13 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
     debugger;
     let result = null
     let task = null
-    let evaluated_task = new Map()
+    let evaluated_tasks = new Map()
     for (let i = 0; i < condition_tasks.length; i++) {
         task = condition_tasks[i]
         result = null
         if ('op' in task) {
             for (let j = 0; j < task.args.length; j++) {
-                task.args[j] = get_arg(task.args[j], evaluated_task, file)
+                task.args[j] = get_arg(task.args[j], evaluated_rule, evaluated_tasks, file)
             }
             switch (task.op) {
                 case 'of':
@@ -16,9 +16,6 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                     break
                 case '+':
                     result = add_operator(task.args[0], task.args[1])
-                    break
-                case '==':
-                    result = eq_operator(task.args[0], task.args[1])
                     break
                 case 'and':
                     result = and_operator(task.args[0], task.args[1])
@@ -62,7 +59,9 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                     result = is_identifier_matched(task.args[0], rules)
                     break
                 case '<':
+                case '<=':
                 case '>':
+                case '>=':
                 case '==':
                 case '!=':
                     result = logical_comparison(task.op, task.args[0], task.args[1])
@@ -71,7 +70,7 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
 
             }
             if (result !== null) {
-                evaluated_task.set(task.id, result)
+                evaluated_tasks.set(task.id, result)
                 task.result = result
             }
         } else {
@@ -86,7 +85,9 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
 function logical_comparison(op, arg_a, arg_b){
     const ops = {
         '<': function (x, y) { return x < y },
+        '<=': function (x, y) { return x <= y },
         '>': function (x, y) { return x >  y },
+        '>=': function (x, y) { return x >=  y },
         '==': function (x, y) { return x == y },
         '!=': function (x, y) { return x != y }
     }
@@ -101,12 +102,17 @@ function logical_comparison(op, arg_a, arg_b){
 }
 
 
-function get_arg(arg, evaluated_tasks, file) {
+function get_arg(arg, evaluated_rule, evaluated_tasks, file) {
     if (arg.name === 'Task') {
         return evaluated_tasks.get(arg.val)
     }
     else if (arg.name === 'FILESIZE'){
         arg.val = file.length
+        return arg
+    }
+    else if ( arg.name == 'STRING_COUNT'){
+        let string_name = arg.val.slice(1)
+        arg.val = evaluated_rule.strings.get(string_name).length
         return arg
     }
     else {
@@ -134,7 +140,10 @@ function of_operator(arg_left, arg_right, strings) {
     let args = 0
     if (arg_left.name === 'ALL') {
         args = strings.size
-    } else {
+    }
+    else if (arg_left.name === 'ANY') {
+        args = 1
+    }else {
         args = get_number(arg_left.val)
     }
 
@@ -196,24 +205,6 @@ function or_operator(arg_left, arg_right) {
     return {
         name: 'or_res',
         val: get_boolean(arg_left.val) || get_boolean(arg_right.val),
-        start_pos: arg_left.start_pos,
-        end_pos: arg_left.end_pos
-    }
-}
-
-function eq_operator(arg_left, arg_right) {
-    let arg_left_val = get_number(arg_left.val)
-    if (isNaN(arg_left_val)) {
-        arg_left_val = arg_left.val
-    }
-
-    let arg_right_val = get_number(arg_right.val)
-    if (isNaN(arg_right_val)) {
-        arg_right_val = arg_right.val
-    }
-    return {
-        name: 'eq_res',
-        val: arg_left_val === arg_right_val,
         start_pos: arg_left.start_pos,
         end_pos: arg_left.end_pos
     }
