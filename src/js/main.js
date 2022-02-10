@@ -493,10 +493,10 @@ function rule_eval_detail_click_handler(e){
         condition_end = rule_eval_object.eval_details.condition[i].end_pos - rule.start_pos
         condition_text = rule.rule_text.slice(condition_start, condition_end)
         condition_text = condition_text.replace(/^[ \t]+/gm,'').trim()
-        if('result' in rule_eval_object.eval_details.condition[i])
+        if('result' in rule_eval_object.eval_details.condition[i] && !rule_eval_object.eval_details.condition[i].result.name.endsWith('_unsupported'))
             condition_val = rule_eval_object.eval_details.condition[i].result.val
         else
-            condition_val = "Unsupported Condition"
+            condition_val = "false (unsupported)"
         if(Number.isInteger(condition_val)){
             condition_val = `0x${condition_val.toString(16)}`
         }

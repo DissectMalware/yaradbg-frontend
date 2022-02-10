@@ -11,6 +11,9 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                 task.args[j] = get_arg(task.args[j], evaluated_rule, evaluated_tasks, file)
             }
             switch (task.op) {
+                case 'at':
+                    result = at_operator(task.args[0], task.args[1], evaluated_rule.strings)
+                    break;
                 case 'of':
                     result = of_operator(task.args[0], task.args[1], evaluated_rule.strings)
                     break
@@ -66,6 +69,14 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                 case '!=':
                     result = logical_comparison(task.op, task.args[0], task.args[1])
                     break
+                default:
+                    console.log(`"${task.op}" is not supported yet`)
+                    result = {
+                        name: `${task.op}_unsupported`,
+                        val: false,
+                        start_pos: task.args[0].start_pos,
+                        end_pos: task.args[task.args.length -1].end_pos
+                    }
 
 
             }
@@ -80,6 +91,26 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
 
     evaluated_rule.condition = condition_tasks
     debugger;
+}
+
+function at_operator(arg_left, arg_right, strings) {
+    let target = strings.get(arg_left.val_str.slice(1))
+    let result = false;
+    for(let i = 0; i< target.length; i++)
+    {
+        if(target[i].start == parseInt(arg_right.val))
+        {
+            result = true;
+            break;
+        }
+    }
+    return {
+        name: 'at_res',
+        val: result,
+        start_pos: arg_left.start_pos,
+        end_pos: arg_right.end_pos
+    }
+
 }
 
 function logical_comparison(op, arg_a, arg_b){
@@ -106,13 +137,19 @@ function get_arg(arg, evaluated_rule, evaluated_tasks, file) {
     if (arg.name === 'Task') {
         return evaluated_tasks.get(arg.val)
     }
-    else if (arg.name === 'FILESIZE'){
-        arg.val = file.length
+    else if ( arg.name == 'STRING_IDENTIFIER'){
+        let string_name = arg.val.slice(1)
+        arg.val_str = arg.val
+        arg.val = evaluated_rule.strings.get(string_name).length >= 1
         return arg
     }
     else if ( arg.name == 'STRING_COUNT'){
         let string_name = arg.val.slice(1)
         arg.val = evaluated_rule.strings.get(string_name).length
+        return arg
+    }
+    else if (arg.name === 'FILESIZE'){
+        arg.val = file.length
         return arg
     }
     else {
