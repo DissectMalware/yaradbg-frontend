@@ -592,16 +592,19 @@ function match_rules(e) {
             table.clearData();
         }
 
-        let active_rules = {}
+        let active_rules = new Map()
 
         Object.keys(rule_file.sorted_rules).forEach(function (key) {
             let rule_name = rule_file.sorted_rules[key].rule_name
             let rule_li = get_rule_record(rule_name)
             if(is_rule_active(rule_li) === true) {
-                active_rules[rule_name] = rule_file.sorted_rules[key]
+                active_rules.set(rule_name, rule_file.sorted_rules[key])
             }
         });
 
+        let process_status = $(hex_editor).find(".process_status")
+        process_status.fadeIn(100)
+        process_status.html(`Processing (0 out ${active_rules.size} is finished)`)
         worker.postMessage({file: file, rules: active_rules, hex_editor_id: $(hex_editor).attr('id')})
         worker.onmessage = function (event) {
             let rule_file = $('#yara_panel').data('rules')
@@ -613,6 +616,15 @@ function match_rules(e) {
             let final_condition_eval = final_condition.result.val
 
             let rule_name= result.rule_name
+
+            let hex_editor = $(`#${result.hex_editor_id}`)
+
+            let process_status = $(hex_editor).find(".process_status")
+
+            process_status.html(`Processing (${result.completed_rules_count} out ${result.active_rules_count} is finished)`)
+            if(result.completed_rules_count >= result.active_rules_count) {
+                process_status.fadeOut(1000)
+            }
 
             let evaluation_result = $(`#${result.hex_editor_id}`).data('evaluation_result')
 ''
@@ -739,6 +751,7 @@ function create_new_hexeditor_tab(file) {
                 <div id="toolbar${id}" class="toolbar">
                      <button id="run${id}" class="run_button">Run</button>
                      <button id="clear${id}" class="clear_button">Clear</button>
+                     <span class="process_status"></span>
                 </div>
                 <table>
                     <thead>

@@ -160,8 +160,8 @@ function get_arg(arg, evaluated_rule, evaluated_tasks, file) {
 function is_identifier_matched(arg, rules){
 
     let identifier_matched = false
-    if (rules.hasOwnProperty(arg.val)){
-        identifier_matched = rules[arg.val].condition[rules[arg.val].condition.length -1].result.val
+    if (rules.has(arg.val)){
+        identifier_matched = rules.get(arg.val).condition[rules[arg.val].condition.length -1].result.val
     }
     return {
         name: 'identifier_res',

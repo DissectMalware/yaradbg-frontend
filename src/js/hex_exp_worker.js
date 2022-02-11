@@ -4,18 +4,22 @@ if( 'function' === typeof importScripts) {
 
     self.onmessage = function (e) {
         let data = e.data
-        Object.keys(data.rules).forEach(function (key) {
+        let count = 1
+        data.rules.forEach(function (value, key) {
             let res = match_rule(data.file, data.rules, key)
-            res.rule_name = key
-            res.hex_editor_id = data.hex_editor_id
+            res.rule_name = key;
+            res.hex_editor_id = data.hex_editor_id;
+            res.completed_rules_count = count;
+            res.active_rules_count = data.rules.size
             self.postMessage(res);
+            count += 1;
         });
     }
 
     function match_rule(file, rules, rule_name) {
         debugger;
         let evaluated_rule = {strings: new Map(), condition: []}
-        let rule = rules[rule_name]
+        let rule = rules.get(rule_name)
 
         if (typeof rule.string !== 'undefiend') {
             match_strings(rule.string, file, evaluated_rule.strings)
