@@ -174,16 +174,6 @@ function is_identifier_matched(arg, rules){
 function of_operator(arg_left, arg_right, strings) {
     let string_set = []
 
-    let args = 0
-    if (arg_left.name === 'ALL') {
-        args = strings.size
-    }
-    else if (arg_left.name === 'ANY') {
-        args = 1
-    }else {
-        args = get_number(arg_left.val)
-    }
-
     if (arg_right.name === 'THEM') {
         for (let str_name of strings.keys()) {
             string_set.push(str_name)
@@ -196,6 +186,18 @@ function of_operator(arg_left, arg_right, strings) {
             }
         }
     }
+
+    let args = 0
+    if (arg_left.name === 'ALL') {
+        args = string_set.length
+    }
+    else if (arg_left.name === 'ANY') {
+        args = 1
+    }else {
+        args = get_number(arg_left.val)
+    }
+
+
 
     let res = false
     if (args > 0) {
