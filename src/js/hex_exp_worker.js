@@ -122,7 +122,7 @@ if( 'function' === typeof importScripts) {
                 index = match.start + 1
                 matches.push(match)
             } else {
-                break
+                index += 1
             }
         }
         let end = performance.now()
@@ -141,8 +141,8 @@ if( 'function' === typeof importScripts) {
         for (let i = 0; i < lines.length; i++) {
             parts = lines[i].split(/[ ,]/)
             if (parts[0] == 'chr') {
-                has_start_mask = parts[1].startsWith('?') ? 0 : 0x0f
-                has_end_mask = parts[1].endsWith('?') ? 0 : 0xf0
+                has_start_mask = parts[1].startsWith('?') ? 0 : 0xf0
+                has_end_mask = parts[1].endsWith('?') ? 0 : 0x0f
                 parts[1] = parseInt(parts[1].replace('?', '0'), 16)
                 parts.push(has_end_mask | has_start_mask)
             } else if (parts[0] == 'chrc') {
@@ -343,9 +343,9 @@ if( 'function' === typeof importScripts) {
                 }
                 // current_state = []
                 clear_thread_array(thread_pool, current_state)
-                start_index = i + 1
-                // add_thread(instructions, 0, current_state, file_content[start_index])
-                current_state.push(get_thread(thread_pool, 0, 0))
+                //start_index = i + 1
+                //current_state.push(get_thread(thread_pool, 0, 0))
+                break;
 
             } else {
                 clear_thread_array(thread_pool, current_state)
