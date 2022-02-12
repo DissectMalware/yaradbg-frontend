@@ -66,13 +66,17 @@ if ('function' === typeof importScripts) {
                 bytecode = convert_to_bytecode(string.val)
             }
 
+            if(modifiers.no_case){
+                convert_bytecode_to_lowercase(bytecode)
+            }
+
             if (modifiers.ascii) {
-                matches = find_all(file, bytecode)
+                matches = find_all(file, bytecode, modifiers.no_case)
             }
 
             let wide_matches = null;
             if (modifiers.wide) {
-                wide_matches = find_all(file, bytecode, true)
+                wide_matches = find_all(file, bytecode, modifiers.no_case, true)
             }
 
             if (matches == null)
@@ -93,6 +97,22 @@ if ('function' === typeof importScripts) {
         }
 
         return matches
+    }
+
+    function convert_bytecode_to_lowercase(bytecode){
+        let parts = null
+        let ascii_code = 0
+        for(let i=0; i<bytecode.length; i++){
+            if( bytecode[i].startsWith('chr')) {
+                parts = bytecode[i].split(' ')
+                ascii_code = parseInt(parts[1], 16)
+                if(ascii_code >= 65 && ascii_code <= 90){
+                    ascii_code = ascii_code | 32
+                }
+                parts[1] = ascii_code.toString(16)
+                bytecode[i] = parts.join(' ')
+            }
+        }
     }
 
     function convert_to_bytecode(string) {
@@ -137,7 +157,7 @@ if ('function' === typeof importScripts) {
         return result
     }
 
-    function find_all(file_content, regex_bytecode, is_wide = false) {
+    function find_all(file_content, regex_bytecode, no_case, is_wide = false) {
         let index = 0
         let matches = []
         let match = null
@@ -157,7 +177,7 @@ if ('function' === typeof importScripts) {
 
         let start = performance.now()
         while (index < file_content.length - 1) {
-            match = find(file_content, instructions, index, thread_pool, is_wide)
+            match = find(file_content, instructions, index, thread_pool, no_case, is_wide)
             if (match != null) {
                 index = match.start + 1
                 matches.push(match)
@@ -261,7 +281,7 @@ if ('function' === typeof importScripts) {
     }
 
 
-    function find(file_content, instructions, start_index, thread_pool, is_wide = false) {
+    function find(file_content, instructions, start_index, thread_pool, no_case, is_wide = false) {
 
         let current_state = []
         current_state.push(get_thread(thread_pool, 0, 0))
@@ -281,15 +301,22 @@ if ('function' === typeof importScripts) {
 
         let skip = false
         let step = is_wide ? 2 : 1
+        let current_char = null
         for (let i = start_index; i < file_content.length - 1; i += step) {
             skip = false;
+            current_char = file_content[i]
+            if(no_case && current_char >= 65 && current_char <= 90){
+                current_char = current_char | 32
+            }
+
             for (let t = 0; t < current_state.length && skip == false; t++) {
                 c_prgcounter = current_state[t].pc
                 instruction = instructions[c_prgcounter]
                 op = instruction[0]
                 switch (op) {
                     case 'chr':
-                        is_match = instruction[2] == 0 ? true : instruction[1] == (file_content[i] & instruction[2])
+
+                        is_match = instruction[2] == 0 ? true : instruction[1] == (current_char & instruction[2])
 
                         if (is_match && is_wide && file_content[i + 1] != 0)
                             is_match = false
