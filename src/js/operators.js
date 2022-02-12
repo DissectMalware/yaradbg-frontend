@@ -26,6 +26,9 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                 case 'or':
                     result = or_operator(task.args[0], task.args[1])
                     break
+                case 'not':
+                    result = not_operator(task.args[0])
+                    break
                 case  'uint8':
                 case  'uint8be':
                     result = integer_operator(task.args[1], file, 1)
@@ -241,6 +244,15 @@ function or_operator(arg_left, arg_right) {
         val: get_boolean(arg_left.val) || get_boolean(arg_right.val),
         start_pos: arg_left.start_pos,
         end_pos: arg_left.end_pos
+    }
+}
+
+function not_operator(arg) {
+    return {
+        name: 'or_res',
+        val: !get_boolean(arg.val),
+        start_pos: arg.start_pos,
+        end_pos: arg.end_pos
     }
 }
 
