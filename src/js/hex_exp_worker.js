@@ -6,12 +6,17 @@ if( 'function' === typeof importScripts) {
         let data = e.data
         let count = 1
         data.rules.forEach(function (value, key) {
-            let res = match_rule(data.file, data.rules, key)
-            res.rule_name = key;
-            res.hex_editor_id = data.hex_editor_id;
-            res.completed_rules_count = count;
-            res.active_rules_count = data.rules.size
-            self.postMessage(res);
+            try {
+                let res = match_rule(data.file, data.rules, key)
+                res.rule_name = key;
+                res.hex_editor_id = data.hex_editor_id;
+                res.completed_rules_count = count;
+                res.active_rules_count = data.rules.size
+                self.postMessage(res);
+            }
+            catch (e){
+                console.log(`Error processing: ${key}`)
+            }
             count += 1;
         });
     }
