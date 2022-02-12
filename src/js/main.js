@@ -497,6 +497,16 @@ function rule_eval_detail_click_handler(e){
         condition_end = rule_eval_object.eval_details.condition[i].end_pos - rule.start_pos
         condition_text = rule.rule_text.slice(condition_start, condition_end)
         condition_text = condition_text.replace(/^[ \t]+/gm,'').trim()
+
+        // temporary fix for handling missing paranthesis at the end of a condition
+        // if the number of openning paranthesis is more than the closing ones,
+        // then we need to add a closing paranthesis at the end
+        let open_paranthesis_count = (condition_text.match(/\(/g) || []).length
+        let close_paranthesis_count = (condition_text.match(/\)/g) || []).length
+        if(open_paranthesis_count>close_paranthesis_count ){
+            condition_text += ')'
+        }
+
         if('result' in rule_eval_object.eval_details.condition[i] && !rule_eval_object.eval_details.condition[i].result.name.endsWith('_unsupported'))
             condition_val = rule_eval_object.eval_details.condition[i].result.val
         else
