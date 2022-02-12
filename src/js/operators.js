@@ -75,7 +75,7 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                         name: `${task.op}_unsupported`,
                         val: false,
                         start_pos: task.args[0].start_pos,
-                        end_pos: task.args[task.args.length -1].end_pos
+                        end_pos: task.args[task.args.length - 1].end_pos
                     }
 
 
@@ -96,10 +96,8 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
 function at_operator(arg_left, arg_right, strings) {
     let target = strings.get(arg_left.val_str.slice(1))
     let result = false;
-    for(let i = 0; i< target.length; i++)
-    {
-        if(target[i].start == parseInt(arg_right.val))
-        {
+    for (let i = 0; i < target.length; i++) {
+        if (target[i].start == parseInt(arg_right.val)) {
             result = true;
             break;
         }
@@ -113,19 +111,22 @@ function at_operator(arg_left, arg_right, strings) {
 
 }
 
-function logical_comparison(op, arg_a, arg_b){
+function logical_comparison(op, arg_a, arg_b) {
     const ops = {
         '<': function (x, y) { return x < y },
         '<=': function (x, y) { return x <= y },
-        '>': function (x, y) { return x >  y },
-        '>=': function (x, y) { return x >=  y },
+        '>': function (x, y) { return x > y },
+        '>=': function (x, y) { return x >= y },
         '==': function (x, y) { return x == y },
         '!=': function (x, y) { return x != y }
     }
 
+    let val_a = arg_a.name == "NUMBER" ? get_number(arg_a.val) : parseInt(arg_a.val)
+    let val_b = arg_b.name == "NUMBER" ? get_number(arg_b.val) : parseInt(arg_b.val)
+
     return {
         name: 'logical_comp_res',
-        val: ops[op](parseInt(arg_a.val), parseInt(arg_b.val)),
+        val: ops[op](val_a, val_b),
         start_pos: arg_a.start_pos,
         end_pos: arg_b.end_pos
     }
@@ -136,36 +137,32 @@ function logical_comparison(op, arg_a, arg_b){
 function get_arg(arg, evaluated_rule, evaluated_tasks, file) {
     if (arg.name === 'Task') {
         return evaluated_tasks.get(arg.val)
-    }
-    else if ( arg.name == 'STRING_IDENTIFIER'){
+    } else if (arg.name == 'STRING_IDENTIFIER') {
         let string_name = arg.val.slice(1)
         arg.val_str = arg.val
         arg.val = evaluated_rule.strings.get(string_name).length >= 1
         return arg
-    }
-    else if ( arg.name == 'STRING_COUNT'){
+    } else if (arg.name == 'STRING_COUNT') {
         let string_name = arg.val.slice(1)
         arg.val = evaluated_rule.strings.get(string_name).length
         return arg
-    }
-    else if (arg.name === 'FILESIZE'){
+    } else if (arg.name === 'FILESIZE') {
         arg.val = file.length
         return arg
-    }
-    else {
+    } else {
         return arg
     }
 }
 
-function is_identifier_matched(arg, rules){
+function is_identifier_matched(arg, rules) {
 
     let identifier_matched = false
-    if (rules.has(arg.val)){
-        identifier_matched = rules.get(arg.val).condition[rules[arg.val].condition.length -1].result.val
+    if (rules.has(arg.val)) {
+        identifier_matched = rules.get(arg.val).condition[rules[arg.val].condition.length - 1].result.val
     }
     return {
         name: 'identifier_res',
-        val:identifier_matched,
+        val: identifier_matched,
         start_pos: arg.start_pos,
         end_pos: arg.end_pos
     }
@@ -190,13 +187,11 @@ function of_operator(arg_left, arg_right, strings) {
     let args = 0
     if (arg_left.name === 'ALL') {
         args = string_set.length
-    }
-    else if (arg_left.name === 'ANY') {
+    } else if (arg_left.name === 'ANY') {
         args = 1
-    }else {
+    } else {
         args = get_number(arg_left.val)
     }
-
 
 
     let res = false
@@ -254,7 +249,7 @@ function integer_operator(arg_left, file, byte_count, signed = false, little_end
     let val = NaN
 
     let offset = parseInt(arg_left.val)
-    if(offset+byte_count < file.buffer.byteLength) {
+    if (offset + byte_count < file.buffer.byteLength) {
         let data_view = new DataView(file.buffer, offset, byte_count)
         switch (byte_count) {
             case 1:
@@ -298,7 +293,19 @@ function get_string_name(string) {
 function get_number(string) {
     if (typeof string == 'number')
         return string
-    return string.startsWith('0x') ? parseInt(string, 16) : parseInt(string)
+
+    let number = 0
+    if (string.startsWith('0x')) {
+        number = parseInt(string, 16)
+    } else {
+        number = parseInt(string)
+        if (string.endsWith('KB')) {
+            number *= 1000;
+        } else if (string.endsWith('MB')) {
+            number *= 1000_000;
+        }
+    }
+    return number
 }
 
 function get_boolean(string) {
