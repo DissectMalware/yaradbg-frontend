@@ -1,24 +1,34 @@
-if( 'function' === typeof importScripts) {
+if ('function' === typeof importScripts) {
 
     self.importScripts("operators.js")
 
     self.onmessage = function (e) {
         let data = e.data
         let count = 1
+        let extra_byte = new Uint8Array(1);
+        extra_byte[0] = 255
+
+        let file_content = concat_typed_array(data.file, extra_byte)
         data.rules.forEach(function (value, key) {
             try {
-                let res = match_rule(data.file, data.rules, key)
+                let res = match_rule(file_content, data.rules, key)
                 res.rule_name = key;
                 res.hex_editor_id = data.hex_editor_id;
                 res.completed_rules_count = count;
                 res.active_rules_count = data.rules.size
                 self.postMessage(res);
-            }
-            catch (e){
+            } catch (e) {
                 console.log(`Error processing: ${key}`)
             }
             count += 1;
         });
+    }
+
+    function concat_typed_array(a, b) { // a, b TypedArray of same type
+        var c = new (a.constructor)(a.length + b.length);
+        c.set(a, 0);
+        c.set(b, a.length);
+        return c;
     }
 
     function match_rule(file, rules, rule_name) {
@@ -45,47 +55,38 @@ if( 'function' === typeof importScripts) {
         for (const index in strings) {
             let string = strings[index]
 
+            let modifiers = get_string_modifiers(string.modifiers)
+            let bytecode = null
+
             if (string.type == 'hex_exp_bytecode' ||
                 string.type == 'regex_expression_bytecode') {
-                matches = find_all(file, string.val)
-                if (matches != null) {
-                    for (let i = 0; i < matches.length; i++) {
-                        rule_result.get(string.str_name.slice(1)).push({
-                            string: string,
-                            start: matches[i].start,
-                            end: matches[i].end
-                        })
-                    }
-                }
+                bytecode = string.val
             } else if (string.type == 'literal_string') {
-
-                let modifiers = get_string_modifiers(string.modifiers)
-
-
                 string.val = string.val.substr(1, string.val.length - 2)
+                bytecode = convert_to_bytecode(string.val)
+            }
 
-                if(modifiers.ascii) {
-                    let bytecode = convert_to_bytecode(string.val)
-                    matches = find_all(file, bytecode)
-                }
+            if (modifiers.ascii) {
+                matches = find_all(file, bytecode)
+            }
 
-                if(modifiers.wide) {
-                    let bytecode = convert_to_bytecode(string.val, true)
-                    if(matches == null)
-                        matches = find_all(file, bytecode)
-                    else
-                        matches.extend(find_all(file, bytecode))
-                }
+            let wide_matches = null;
+            if (modifiers.wide) {
+                wide_matches = find_all(file, bytecode, true)
+            }
 
+            if (matches == null)
+                matches = wide_matches
+            else if (wide_matches != null)
+                matches.push(...wide_matches)
 
-                if (matches != null) {
-                    for (let i = 0; i < matches.length; i++) {
-                        rule_result.get(string.str_name.slice(1)).push({
-                            string: string,
-                            start: matches[i].start,
-                            end: matches[i].end
-                        })
-                    }
+            if (matches != null) {
+                for (let i = 0; i < matches.length; i++) {
+                    rule_result.get(string.str_name.slice(1)).push({
+                        string: string,
+                        start: matches[i].start,
+                        end: matches[i].end
+                    })
                 }
             }
 
@@ -94,7 +95,7 @@ if( 'function' === typeof importScripts) {
         return matches
     }
 
-    function convert_to_bytecode(string, wide=false){
+    function convert_to_bytecode(string, wide = false) {
         let bytecode = []
 
         string = string.replaceAll('\\\\', '\\')
@@ -104,7 +105,7 @@ if( 'function' === typeof importScripts) {
 
         for (let i = 0; i < string.length; i++) {
             bytecode.push(`chr ${string.charCodeAt(i).toString(16)}`)
-            if(wide){
+            if (wide) {
                 bytecode.push(`chr 0`)
             }
         }
@@ -138,7 +139,7 @@ if( 'function' === typeof importScripts) {
         return result
     }
 
-    function find_all(file_content, regex_bytecode) {
+    function find_all(file_content, regex_bytecode, is_wide = false) {
         let index = 0
         let matches = []
         let match = null
@@ -157,8 +158,8 @@ if( 'function' === typeof importScripts) {
         }
 
         let start = performance.now()
-        while (index < file_content.length) {
-            match = find(file_content, instructions, index, thread_pool)
+        while (index < file_content.length - 1) {
+            match = find(file_content, instructions, index, thread_pool, is_wide)
             if (match != null) {
                 index = match.start + 1
                 matches.push(match)
@@ -262,7 +263,7 @@ if( 'function' === typeof importScripts) {
     }
 
 
-    function find(file_content, instructions, start_index, thread_pool) {
+    function find(file_content, instructions, start_index, thread_pool, is_wide = false) {
 
         let current_state = []
         current_state.push(get_thread(thread_pool, 0, 0))
@@ -281,7 +282,8 @@ if( 'function' === typeof importScripts) {
         let ignore = null
 
         let skip = false
-        for (let i = start_index; i < file_content.length; i++) {
+        let step = is_wide ? 2 : 1
+        for (let i = start_index; i < file_content.length - 1; i += step) {
             skip = false;
             for (let t = 0; t < current_state.length && skip == false; t++) {
                 c_prgcounter = current_state[t].pc
@@ -290,6 +292,10 @@ if( 'function' === typeof importScripts) {
                 switch (op) {
                     case 'chr':
                         is_match = instruction[2] == 0 ? true : instruction[1] == (file_content[i] & instruction[2])
+
+                        if (is_match && is_wide && file_content[i + 1] != 0)
+                            is_match = false
+
                         if (is_match === false) {
                             if (ignore_stack.length == 0) {
                                 break;
