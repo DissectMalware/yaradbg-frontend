@@ -102,6 +102,7 @@ if ('function' === typeof importScripts) {
         string = string.replaceAll('\\n', '\n')
         string = string.replaceAll('\\r', '\r')
         string = string.replaceAll('\\t', '\t')
+        string = string.replaceAll('\\"', '"')
 
         for (let i = 0; i < string.length; i++) {
             bytecode.push(`chr ${string.charCodeAt(i).toString(16)}`)
