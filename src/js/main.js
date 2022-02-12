@@ -301,6 +301,10 @@ function filter_yara_rules_change_handler(e){
 
 function add_yara_rules(rule_json, yara_file_content) {
     let rule_file = JSON.parse(rule_json)
+    if('error' in rule_file){
+        alert(rule_file.error)
+        return
+    }
     let rules_html = ''
     let rule_id = 0
     $('#yara_rules').addClass("yara_sig_panel")
