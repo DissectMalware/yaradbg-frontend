@@ -95,7 +95,7 @@ if ('function' === typeof importScripts) {
         return matches
     }
 
-    function convert_to_bytecode(string, wide = false) {
+    function convert_to_bytecode(string) {
         let bytecode = []
 
         string = string.replaceAll('\\\\', '\\')
@@ -105,9 +105,6 @@ if ('function' === typeof importScripts) {
 
         for (let i = 0; i < string.length; i++) {
             bytecode.push(`chr ${string.charCodeAt(i).toString(16)}`)
-            if (wide) {
-                bytecode.push(`chr 0`)
-            }
         }
         bytecode.push('match')
         return bytecode
