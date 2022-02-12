@@ -59,33 +59,25 @@ if( 'function' === typeof importScripts) {
                 }
             } else if (string.type == 'literal_string') {
 
-                let nocase = false,
-                    ascii = false,
-                    wide = false;
-                for (let i = 0; i < string.modifiers.length; i++) {
-                    switch (string.modifiers[i].modifier) {
-                        case 'nocase':
-                            nocase = true;
-                            break
-                        case 'ascii':
-                            ascii = true;
-                            break
-                        case 'wide':
-                            wide = true;
-                    }
-                }
-                if (wide == false)
-                    ascii = true
+                let modifiers = get_string_modifiers(string.modifiers)
 
-                let bytecode = []
+
                 string.val = string.val.substr(1, string.val.length - 2)
 
-                for (let i = 0; i < string.val.length; i++) {
-                    bytecode.push(`chr ${string.val.charCodeAt(i).toString(16)}`)
+                if(modifiers.ascii) {
+                    let bytecode = convert_to_bytecode(string.val)
+                    matches = find_all(file, bytecode)
                 }
-                bytecode.push('match')
 
-                matches = find_all(file, bytecode)
+                if(modifiers.wide) {
+                    let bytecode = convert_to_bytecode(string.val, true)
+                    if(matches == null)
+                        matches = find_all(file, bytecode)
+                    else
+                        matches.extend(find_all(file, bytecode))
+                }
+
+
                 if (matches != null) {
                     for (let i = 0; i < matches.length; i++) {
                         rule_result.get(string.str_name.slice(1)).push({
@@ -100,6 +92,50 @@ if( 'function' === typeof importScripts) {
         }
 
         return matches
+    }
+
+    function convert_to_bytecode(string, wide=false){
+        let bytecode = []
+
+        string = string.replaceAll('\\\\', '\\')
+        string = string.replaceAll('\\n', '\n')
+        string = string.replaceAll('\\r', '\r')
+        string = string.replaceAll('\\t', '\t')
+
+        for (let i = 0; i < string.length; i++) {
+            bytecode.push(`chr ${string.charCodeAt(i).toString(16)}`)
+            if(wide){
+                bytecode.push(`chr 0`)
+            }
+        }
+        bytecode.push('match')
+        return bytecode
+    }
+
+    function get_string_modifiers(modifiers) {
+        let result = {
+            no_case: false,
+            ascii: false,
+            wide: false
+        }
+
+        for (let i = 0; i < modifiers.length; i++) {
+            switch (modifiers[i].modifier) {
+                case 'nocase':
+                    result.no_case = true;
+                    break
+                case 'ascii':
+                    result.ascii = true;
+                    break
+                case 'wide':
+                    result.wide = true;
+            }
+        }
+
+        if (result.wide == false)
+            result.ascii = true
+
+        return result
     }
 
     function find_all(file_content, regex_bytecode) {
