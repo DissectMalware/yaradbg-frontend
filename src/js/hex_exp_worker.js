@@ -103,7 +103,7 @@ if ('function' === typeof importScripts) {
         let parts = null
         let ascii_code = 0
         for(let i=0; i<bytecode.length; i++){
-            if( bytecode[i].startsWith('chr')) {
+            if( bytecode[i].startsWith('chr ')) {
                 parts = bytecode[i].split(' ')
                 ascii_code = parseInt(parts[1], 16)
                 if(ascii_code >= 65 && ascii_code <= 90){
@@ -112,8 +112,21 @@ if ('function' === typeof importScripts) {
                 parts[1] = ascii_code.toString(16)
                 bytecode[i] = parts.join(' ')
             }
+            else if( bytecode[i].startsWith('chrc ')) {
+                parts = bytecode[i].split(' ')
+                let char_bitmap = parts[1].split(',')
+                char_bitmap[12] = (parseInt(char_bitmap[12],16) | (parseInt(char_bitmap[8],16)  & 0b11111110)).toString(16)
+                char_bitmap[13] = (parseInt(char_bitmap[13],16) | (parseInt(char_bitmap[9],16)  & 0xff)).toString(16)
+                char_bitmap[14] = (parseInt(char_bitmap[14],16) | (parseInt(char_bitmap[10],16) & 0xff)).toString(16)
+                char_bitmap[15] = (parseInt(char_bitmap[15],16) | (parseInt(char_bitmap[11],16) & 0b00000111)).toString(16)
+
+                parts[1] =char_bitmap.join(',')+';'
+                bytecode[i] = parts.join(' ')
+            }
         }
     }
+
+
 
     function convert_to_bytecode(string) {
         let bytecode = []
