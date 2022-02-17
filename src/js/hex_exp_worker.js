@@ -53,6 +53,7 @@ if ('function' === typeof importScripts) {
             rule_result.set(strings[i].str_name.slice(1), [])
         }
         for (const index in strings) {
+            matches = null
             let string = strings[index]
 
             let modifiers = get_string_modifiers(string.modifiers)
