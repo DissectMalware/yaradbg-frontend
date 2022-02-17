@@ -98,12 +98,11 @@ $(document).ready(function () {
         .tabs({
             closable: true,
             activate: function (event, ui) {
+                $(`li[rule_key]`).removeClass('matched not_matched')
+
                 if (ui.newPanel.hasClass('hexeditor_panel')) {
 
-
                     let evaluation_result = $(ui.newPanel).data('evaluation_result')
-
-                    $(`li[rule_key]`).removeClass('matched not_matched')
 
                     if(typeof evaluation_result !== 'undefined'){
                         Object.keys(evaluation_result).forEach(function (key){
@@ -372,7 +371,6 @@ function add_yara_rules(rule_json, yara_file_content) {
         }
         else{
             disable_rules(rule_file, impact_on, rule_name)
-            check_box.closest('li').removeClass('not_matched').removeClass('matched')
         }
 
     });
@@ -442,7 +440,7 @@ function disable_rules(rule_file, impact_on,  rule_name){
         rule_li = get_rule_record(will_be_impacted.rule_name)
         rule_li.find('input').prop('checked', false)
         disable_rules(rule_file, impact_on, will_be_impacted.rule_name)
-
+        rule_li.removeClass('not_matched matched')
     }
 }
 
