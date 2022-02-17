@@ -113,7 +113,8 @@ $(document).ready(function () {
                     }
 
                     var file = ui.newPanel.data('attached_file')
-                    if (file != undefined) {
+                    var file_content = ui.newPanel.data('file_content')
+                    if (typeof file != 'undefined' && typeof file_content === 'undefined') {
                         var reader = new FileReader();
                         var startTime = performance.now()
                         reader.onloadend = (evt) => {
