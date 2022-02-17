@@ -196,7 +196,7 @@ if ('function' === typeof importScripts) {
                 index = match.start + 1
                 matches.push(match)
             } else {
-                index += 1
+                break
             }
         }
         let end = performance.now()
@@ -427,11 +427,11 @@ if ('function' === typeof importScripts) {
                 if (found_match != null) {
                     return found_match
                 }
-                // current_state = []
+                current_state = []
                 clear_thread_array(thread_pool, current_state)
-                //start_index = i + 1
-                //current_state.push(get_thread(thread_pool, 0, 0))
-                break;
+                i = start_index + 1 - step
+                start_index += 1
+                current_state.push(get_thread(thread_pool, 0, 0))
 
             } else {
                 clear_thread_array(thread_pool, current_state)
