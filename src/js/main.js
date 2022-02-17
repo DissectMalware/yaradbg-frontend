@@ -158,14 +158,18 @@ $(document).ready(function () {
                 event.stopPropagation();
                 event.preventDefault();
                 if (event.type == 'drop') {
+                    let tab_index = null
                     for (let i = 0; i < event.originalEvent.dataTransfer.files.length; i++) {
                         let file = event.originalEvent.dataTransfer.files[i]
                         if (file.size > 20 * 1024 * 1024) {
                             alert(`${file.name} is too big (>20MB)`)
                             continue;
                         }
-                        create_new_hexeditor_tab(file)
+                        tab_index = create_new_hexeditor_tab(file)
                     }
+                    // refresh and switch to new tab;
+                    $('#tabpanel').tabs('refresh').tabs("option", "active", tab_index)
+
                     $('#tabpanel').css({'backgroundColor': 'white'})
                 } else if (event.type == 'dragover') {
                     $('#tabpanel').css({'backgroundColor': 'purple'})
@@ -818,9 +822,6 @@ function create_new_hexeditor_tab(file) {
 
     $(`div#hexEdtPanel${num_tabs}`).data('attached_file', file)
 
-    // refresh and switch to new tab;
-    $('#tabpanel').tabs('refresh').tabs("option", "active", number_of_tabs)
-
     $(`#hexEdtTab${num_tabs} .ui-closable-tab`).on('click', close_tab_event_handler);
 
     $(`#run${num_tabs}`).button({
@@ -850,6 +851,8 @@ function create_new_hexeditor_tab(file) {
         ],
     });
     $(`#hexEdtPanel${num_tabs}`).data('table', table)
+
+    return number_of_tabs
 
 }
 
