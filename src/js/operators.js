@@ -161,7 +161,7 @@ function is_identifier_matched(arg, rules) {
 
     let identifier_matched = false
     if (rules.has(arg.val)) {
-        identifier_matched = rules.get(arg.val).condition[rules[arg.val].condition.length - 1].result.val
+        identifier_matched = rules.get(arg.val).condition[rules.get(arg.val).condition.length - 1].result.val
     }
     return {
         name: 'identifier_res',
