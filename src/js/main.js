@@ -595,10 +595,10 @@ function match_rules(e) {
 
     if (typeof file != 'undefined') {
 
+        $(hex_editor).data('markers', new Map())
         let markers = $(hex_editor).data('markers')
-        if (typeof markers === 'undefined') {
-            $(hex_editor).data('markers', new Map())
-        }
+
+        tableWrapper.trigger('lazytable:refresh');
 
         let table = $(hex_editor).data('table')
         if(table !== 'undefined')
