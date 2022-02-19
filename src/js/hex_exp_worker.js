@@ -440,6 +440,43 @@ if ('function' === typeof importScripts) {
 
             }
         }
+
+        // if bytecode matches with the end of file_content
+        for (let t = 0; t < current_state.length && skip == false; t++) {
+            c_prgcounter = current_state[t].pc
+            instruction = instructions[c_prgcounter]
+            op = instruction[0]
+            switch (op) {
+                case 'match':
+                    if (found_match == null)
+                        found_match = {
+                            start: start_index,
+                            end: file_content.length - 1,
+                            match: true
+                        }
+                    else {
+                        if (found_match.end < (file_content.length - 1)) {
+                            found_match = {
+                                start: start_index,
+                                end: file_content.length - 1,
+                                match: true
+                            }
+                        }
+                    }
+                    skip = true
+                    break;
+
+            }
+        }
+
+        if (next_state.length === 0) {
+            if (found_match != null) {
+                return found_match
+            }
+            current_state = []
+            clear_thread_array(thread_pool, current_state)
+        }
+
         return found_match
     }
 
