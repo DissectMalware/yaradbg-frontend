@@ -194,46 +194,7 @@ $(document).ready(function () {
             reader.onloadend = (evt) => {
                 if (evt.target.readyState == FileReader.DONE) {
                     let text = evt.target.result;
-                    var files = new FormData()
-                    const blob = new Blob([text], {type : 'text/plain'})
-                    files.append('yarafile', blob, file_name);
-                    $.ajax({
-                        type: "POST",
-                        processData: false,
-                        contentType: false,
-                        url: "http://localhost:7071/api/yaraparser",
-                        data: files,
-                        cache: false
-                    }).done(function (html) {
-                        $('#yara_panel .spinner').removeClass('lds-facebook')
-                        add_yara_rules(html, text)
-                    }).fail(function (response) {
-                        $('#yara_panel .spinner').removeClass('lds-facebook')
-                        if (response.status == 422) {
-                            alert(response.responseText)
-                        } else {
-                            alert('Unknown error')
-                        }
-                    });
-                    $('#yara_panel').html(`
-                                <div class="yara_rule_header">
-                                    <img src="img/yara-icon.png"/>
-                                </div>
-                                <div><input id="filter_yara_rules" type="text" placeholder="Filter Yara Rules" /></div>
-                                <div class="spinner lds-facebook">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                                <div id="yara_rules"></div>
-                                    <div id="credit">
-                                    <span>Developed by <a href="https://github.com/DissectMalware">@DissectMalware</a>
-                                    </span>
-                                </div>
-                    `)
-
-                    $('#filter_yara_rules').on('input propertychange', filter_yara_rules_change_handler)
-
+                    parse_yara(text, file_name)
                 }
 
             }
@@ -244,6 +205,18 @@ $(document).ready(function () {
         } else if (event.type == 'dragleave') {
             $('#sidebar_yara').css({'backgroundColor': 'white'})
         }
+
+    }).on('paste', function(e){
+        let paste = (event.clipboardData || window.clipboardData).getData('text');
+        if(is_valid_web_link(paste)){
+            if(paste.startsWith("https://github.com")){
+                paste = paste.replace("https://github.com", "https://raw.githubusercontent.com")
+                paste = paste.replace('blob/', '')
+            }
+        }
+        $.get(paste).success(function(data){
+            parse_yara(data, "web_content");
+        });
 
     });
 
@@ -282,6 +255,59 @@ $(document).ready(function () {
 
 
 });
+
+function is_valid_web_link(string) {
+    let url;
+    try {
+        url = new URL(string);
+    } catch (_) {
+        return false;
+    }
+    return url.protocol === "http:" || url.protocol === "https:";
+}
+
+function parse_yara(text, file_name){
+    var files = new FormData()
+    const blob = new Blob([text], {type : 'text/plain'})
+    files.append('yarafile', blob, file_name);
+    $.ajax({
+        type: "POST",
+        processData: false,
+        contentType: false,
+        url: "http://localhost:7071/api/yaraparser",
+        data: files,
+        cache: false
+    }).done(function (html) {
+        $('#yara_panel .spinner').removeClass('lds-facebook')
+        add_yara_rules(html, text)
+    }).fail(function (response) {
+        $('#yara_panel .spinner').removeClass('lds-facebook')
+        if (response.status == 422) {
+            alert(response.responseText)
+        } else {
+            alert('Unknown error')
+        }
+    });
+    $('#yara_panel').html(`
+                                <div class="yara_rule_header">
+                                    <img src="img/yara-icon.png"/>
+                                </div>
+                                <div><input id="filter_yara_rules" type="text" placeholder="Filter Yara Rules" /></div>
+                                <div class="spinner lds-facebook">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div id="yara_rules"></div>
+                                    <div id="credit">
+                                    <span>Developed by <a href="https://github.com/DissectMalware">@DissectMalware</a>
+                                    </span>
+                                </div>
+                    `)
+
+    $('#filter_yara_rules').on('input propertychange', filter_yara_rules_change_handler)
+
+}
 
 function filter_yara_rules_change_handler(e){
     let text = $(this).val()

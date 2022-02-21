@@ -444,7 +444,7 @@ td.condition_res{
 
 #main_tab h1 { font-family: 'Open Sans Condensed', sans-serif; font-size: 64px; }
 
-#main_tab p { font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 28px; margin: 0 0 12px; }
+#main_tab p, #yara_panel p { font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 28px; margin: 0 0 12px; }
 
 #main_tab{
     overflow-y: auto;

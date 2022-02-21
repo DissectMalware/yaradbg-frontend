@@ -1,0 +1,116 @@
+rule IsOLE
+{
+    condition:
+        uint32be(0x0) == 0xD0CF11E0
+        and uint32be(0x4) == 0xA1B11AE1 
+} 
+
+rule IsPE
+{
+    condition:
+        (uint16(0) == 0x5A4D) and (uint32(uint32(0x3C)) == 0x00004550) 
+}
+
+rule HackTool_MSIL_Rubeus_1
+{
+    meta:
+        description = "The TypeLibGUID present in a .NET binary maps directly to the ProjectGuid found in the '.csproj' file of a .NET project. This rule looks for .NET PE files that contain the ProjectGuid found in the public Rubeus project."
+        md5 = "66e0681a500c726ed52e5ea9423d2654"
+        reference = "https://www.fireeye.com/blog/products-and-services/2020/12/fireeye-shares-details-of-recent-cyber-attack-actions-to-protect-community.html"
+        author = "FireEye"
+    strings:
+        $typelibguid = "658C8B7F-3664-4A95-9572-A3E5871DFC06" ascii nocase wide
+    condition:
+        IsPE and $typelibguid 
+}
+
+rule EXPL_CVE_2021_40444_Document_Rels_XML {
+   meta:
+      description = "Detects indicators found in weaponized documents that exploit CVE-2021-40444"
+      author = "Jeremy Brown / @alteredbytes"
+      reference = "https://twitter.com/AlteredBytes/status/1435811407249952772"
+      date = "2021-09-10"
+   strings:
+      $b1 = "/relationships/oleObject" ascii 
+      $b2 = "/relationships/attachedTemplate" ascii
+
+      $c1 = "Target=\"mhtml:http" nocase
+      $c2 = "!x-usc:http" nocase
+      $c3 = "TargetMode=\"External\"" nocase
+   condition:
+      uint32(0) == 0x6D783F3C
+      and filesize < 10KB
+      and 1 of ($b*)
+      and all of ($c*)
+}
+
+rule SUSP_VBA_FileSystem_Access {
+   meta:
+      description = "Detects suspicious VBA that writes to disk and is activated on document open"
+      author = "Florian Roth"
+      reference = "Internal Research"
+      date = "2019-06-21"
+      score = 60
+      hash1 = "52262bb315fa55b7441a04966e176b0e26b7071376797e35c80aa60696b6d6fc"
+   strings:
+      $s1 = "\\Common Files\\Microsoft Shared\\" wide ascii
+      $s2 = "Scripting.FileSystemObject" ascii
+
+      $a1 = "Document_Open" ascii
+      $a2 = "WScript.Shell" ascii
+      $a3 = "AutoOpen" fullword ascii
+   condition:
+      IsOLE and filesize < 100KB and all of ($s*) and 1 of ($a*)
+}
+
+rule SUSP_Office_Dropper_Strings {
+   meta:
+      description = "Detects Office droppers that include a notice to enable active content"
+      author = "Florian Roth"
+      reference = "Internal Research"
+      date = "2018-09-13"
+   strings:
+      $a1 = "_VBA_PROJECT" fullword wide
+
+      $s1 = "click enable editing" fullword ascii
+      $s2 = "click enable content" fullword ascii
+      $s3 = "\"Enable Editing\"" fullword ascii
+      $s4 = "\"Enable Content\"" fullword ascii
+   condition:
+      IsOLE and filesize < 500KB and $a1 and 1 of ($s*)
+}
+
+rule SUSP_Macro_Sheet_Obfuscated_Char {
+   meta:
+      description = "Finding hidden/very-hidden macros with many CHAR functions"
+      author = "DissectMalware"
+      date = "2020-04-07"
+      score = 65
+      hash1 = "0e9ec7a974b87f4c16c842e648dd212f80349eecb4e636087770bc1748206c3b"
+      reference = "https://twitter.com/DissectMalware/status/1247595433305800706"
+   strings:
+      $s1 = "Excel" fullword ascii
+      $macro_sheet_h1 = {85 00 ?? ?? ?? ?? ?? ?? 01 01}
+      $macro_sheet_h2 = {85 00 ?? ?? ?? ?? ?? ?? 02 01}    
+      $char_func = {06 ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? 1E 3D  00 41 6F 00}
+   condition:
+      IsOLE and 1 of ($macro_sheet_h*) and #char_func > 10 and $s1
+}
+
+rule Loader_Win_Generic_19
+{
+    meta:
+        description = "Detects generic Windows loader"
+        date = "2020-12-02"
+        modified = "2020-12-02"
+        md5 = "3fb9341fb11eca439b50121c6f7c59c7"
+        reference = "https://www.fireeye.com/blog/products-and-services/2020/12/fireeye-shares-details-of-recent-cyber-attack-actions-to-protect-community.html"
+        author = "FireEye"
+    strings:
+        $s0 = { 8B [1-16] 89 [1-16] E8 [4-32] F3 A4 [0-16] 89 [1-8] E8 }
+        $s1 = { 83 EC [1-16] 04 00 00 00 [1-24] 00 30 00 00 [1-24] FF 15 [4-16] EB [16-64] 20 00 00 00 [0-8] FF 15 [4-32] C7 44 24 ?? 00 00 00 00 [0-8] C7 44 24 ?? 00 00 00 00 [0-16] FF 15 }
+        $si1 = "VirtualProtect" fullword
+        $si2 = "malloc" fullword
+    condition:
+        IsPE and all of them
+}

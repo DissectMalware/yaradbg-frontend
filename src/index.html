@@ -2,7 +2,7 @@
 <html lang="en" style="display: none">
 <head>
     <meta charset="UTF-8">
-    <title>YaraDBG v0.0.1</title>
+    <title>YaraDBG v0.0.2</title>
 
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.0/themes/base/jquery-ui.css"/>
     <link href="https://unpkg.com/tabulator-tables@5.0.10/dist/css/tabulator.min.css" rel="stylesheet">
@@ -57,7 +57,12 @@
         <div><img src="img/yara-icon.png"/></div>
         <div><input id="filter_yara_rules" type="text" placeholder="Filter Yara Rules" /></div>
         <div class="spinner"><div></div><div></div><div></div></div>
-        <div id="yara_rules"></div>
+        <div id="yara_rules">
+            <p>
+            Drop a Yara file on this panel, or <br />
+            Click on the panel, then paste (ctrl+v) a URL to a Yara file
+            </p>
+        </div>
         <div id="credit"><span>Developed by <a href="https://github.com/DissectMalware">@DissectMalware</a></span></div>
     </div>
 </div>
