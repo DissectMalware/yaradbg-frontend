@@ -470,3 +470,18 @@ td.condition_res{
     color: blue;
 }
 
+.yara-top, .yara-text{
+    position: absolute;
+    top: 0px;
+    left: 8px;
+}
+
+
+.yara-top{
+    z-index: 1;
+    color: transparent;
+}
+
+.eval-true{
+    background-color: rgba(0, 80, 0, 0.2);
+}

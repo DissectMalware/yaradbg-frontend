@@ -1,5 +1,5 @@
 export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
-    debugger;
+    //debugger;
     let result = null
     let task = null
     let evaluated_tasks = new Map()
@@ -93,7 +93,7 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
     }
 
     evaluated_rule.condition = condition_tasks
-    debugger;
+    //debugger;
 }
 
 function at_operator(arg_left, arg_right, strings) {

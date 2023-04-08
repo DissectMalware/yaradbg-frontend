@@ -1,6 +1,6 @@
 import style from '../css/main.css'
 var outerLayout, middleLayout, innerLayout;
-var worker = new Worker('/yaradbg-frontend/dist/worker.js');
+var worker = new Worker('worker.js');
 const zip = require('./external/zip-no-worker-inflate.min');
 
 zip.configure({
@@ -560,10 +560,83 @@ function enable_rules(rule_file, impacted_by,  rule_name){
     }
 }
 
+function removeNestedPositions(positions) {
+    // Sort the positions based on their start index in ascending order
+    positions.sort((a, b) => a.start_pos - b.start_pos);
+  
+    // Iterate through the positions and remove any position that is completely contained within another position
+    for (let i = 0; i < positions.length - 1; i++) {
+      const currentPos = positions[i];
+      const nextPos = positions[i + 1];
+      
+      if (currentPos.end_pos >= nextPos.end_pos) {
+        positions.splice(i + 1, 1);
+        i--;
+      } else if (currentPos.end_pos >= nextPos.start_pos) {
+        currentPos.end_pos = nextPos.end_pos;
+        positions.splice(i + 1, 1);
+        i--;
+      }
+    }
+  
+    return positions;
+  }
+
 function rule_name_click_handler(e) {
     let rule = get_rule_text(e.target.title)
     let highlighted_text = Prism.highlight(rule.rule_text, Prism.languages.yara, 'yara')
-    $( "#yara_rule_dialog" ).html(`<p>${highlighted_text}</p>`)
+
+    let active_tab = $('.hex_editor_tab.ui-tabs-active a')
+    let active_tab_panel_id = active_tab.attr('href')
+    let evaluation_result = $(active_tab_panel_id).data('evaluation_result')
+
+    if( typeof evaluation_result !== 'undefined'){
+        let rule_eval_object = evaluation_result[e.target.title]
+        if(typeof rule_eval_object !== 'undefined' ){
+
+            let end_conditions = []
+            rule_eval_object.eval_details.condition.forEach(element => {
+                let end_condition = true
+                /*element.args.forEach(arg => {
+                    if(arg.name.endsWith('_res')){
+                    end_condition = false
+                    }
+                });*/
+
+                if(element.result.val == true){
+                    end_conditions.push({start_pos: element.start_pos - rule.start_pos, end_pos: element.end_pos - rule.start_pos})
+                }
+            });
+
+            end_conditions = removeNestedPositions(end_conditions)
+            let rule_text = rule.rule_text
+            for (const end_condition of end_conditions) {
+                const {start_pos, end_pos} = end_condition;
+                let result = ''
+                result +=  rule_text.slice(0, start_pos);
+                let data = rule_text.slice(start_pos, end_pos);
+                let lines = data.indexOf('\r\n')>=0? data.split("\r\n"): data.split('\n')
+                if(lines.length>0){
+                    lines.forEach(line => {
+                        const numSpaces = (line.match(/^\s+/) || [''])[0].length;
+                        result += `${' '.repeat(numSpaces)}<span class="eval-true">${line.trim()}</span>\r\n`;
+                    });
+                    result = result.slice(0, result.length -2)
+                }
+                result += rule_text.slice(end_pos);
+                rule_text = result
+            }
+            
+            $( "#yara_rule_dialog" ).html(`<p class='yara-text'>${highlighted_text}</p><p class='yara-top'>${rule_text}</p>`)
+        }
+    }
+    else{
+        $( "#yara_rule_dialog" ).html(`<p>${highlighted_text}</p>`)
+    }
+
+
+
+   
     $( "#yara_rule_dialog" ).dialog("option","title",e.target.title).dialog( "open" );
 }
 
