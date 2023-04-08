@@ -1,6 +1,12 @@
 import style from '../css/main.css'
 var outerLayout, middleLayout, innerLayout;
 var worker = new Worker('/yaradbg-frontend/dist/worker.js');
+const zip = require('./external/zip-no-worker-inflate.min');
+
+zip.configure({
+    useWebWorkers: false
+});
+
 const COL_COUNT = 16
 
 $(document).ready(function () {
@@ -158,18 +164,68 @@ $(document).ready(function () {
                 event.preventDefault();
                 if (event.type == 'drop') {
                     let tab_index = null
-                    for (let i = 0; i < event.originalEvent.dataTransfer.files.length; i++) {
+                    let file_count = event.originalEvent.dataTransfer.files.length
+                    for (let i = 0; i <file_count ; i++) {
                         let file = event.originalEvent.dataTransfer.files[i]
-                        if (file.size > 20 * 1024 * 1024) {
-                            alert(`${file.name} is too big (>20MB)`)
-                            continue;
-                        }
-                        tab_index = create_new_hexeditor_tab(file)
-                    }
-                    // refresh and switch to new tab;
-                    $('#tabpanel').tabs('refresh').tabs("option", "active", tab_index)
 
-                    $('#tabpanel').css({'backgroundColor': 'white'})
+                        const unwrap_encrypted_zip = async (file, password) => {
+                            let reader;
+                            try {
+                                reader = new zip.ZipReader(new zip.BlobReader(file), { password });
+                                const entries = await reader.getEntries();
+                                for (const entry of entries) {
+                                    try {
+                                        let content = new zip.BlobWriter()
+                                        await entry.getData(content);
+                                        let entry_blob = content.blob
+                                        entry_blob.name = entry.filename
+                                        if (entry_blob.size > 20 * 1024 * 1024) {
+                                            alert(`${entry_blob.name} is too big (>20MB)`)
+                                        }
+                                        else {
+                                            tab_index = create_new_hexeditor_tab(entry_blob)
+                                            if(i == file_count - 1 ){
+                                                // refresh and switch to new tab;
+                                                $('#tabpanel').tabs('refresh').tabs("option", "active", tab_index)
+
+                                                $('#tabpanel').css({'backgroundColor': 'white'})
+                                            }
+                                            break
+                                        }
+                                    } catch (error) {
+                                        if (error.message === zip.ERR_ENCRYPTED ||
+                                            error.message === zip.ERR_INVALID_PASSWORD) {
+                                            return false;
+                                        } else {
+                                            throw error;
+                                        }
+                                    }
+                                }
+                            } catch {
+                                if (file.size > 20 * 1024 * 1024) {
+                                    alert(`${file.name} is too big (>20MB)`)
+                                }
+                                else {
+                                    tab_index = create_new_hexeditor_tab(file)
+                                    if(i == file_count - 1 ){
+                                        // refresh and switch to new tab;
+                                        $('#tabpanel').tabs('refresh').tabs("option", "active", tab_index)
+
+                                        $('#tabpanel').css({'backgroundColor': 'white'})
+                                    }
+                                }
+                            }
+                            finally {
+                                await reader.close();
+                            }
+ 
+                            return true;
+                        };
+
+                        unwrap_encrypted_zip(file, 'infected')
+
+                    }
+
                 } else if (event.type == 'dragover') {
                     $('#tabpanel').css({'backgroundColor': 'purple'})
                 } else if (event.type == 'dragleave') {
