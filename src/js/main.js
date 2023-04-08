@@ -7,6 +7,27 @@ zip.configure({
     useWebWorkers: false
 });
 
+const yaraLanguage = {
+    keyword: /\b(?:all|and|any|ascii|at|base64|base64wide|condition|contains|endswith|entrypoint|false|filesize|for|fullword|global|import|icontains|iendswith|iequals|in|include|int16|int16be|int32|int32be|int8|int8be|istartswith|matches|meta|nocase|none|not|of|or|private|rule|startswith|strings|them|true|uint16|uint16be|uint32|uint32be|uint8|uint8be|wide|xor|defined)\b/g,
+    operator: /==|!=|<|>|<=|>=|&&|\|\||&|\||\^|<<|>>/g,
+    punctuation: /[{}[\];(),.:]/g,
+    string: /(["'])(?:\\.|(?!\1).)*\1/g,
+    comment: /\/\/.*|\/\*[\s\S]*?\*\//g,
+    hexnumber: /0x[a-f\d]+/gi,
+    number: /\b\d+\b/g
+  };
+
+Prism.languages.yara = {
+    'keyword': { pattern: yaraLanguage.keyword, alias: 'yara_keyword' },
+    'operator': { pattern: yaraLanguage.operator, alias: 'yara_operator' },
+    'punctuation': { pattern: yaraLanguage.punctuation, alias: 'yara_punctuation' },
+    'string': { pattern: yaraLanguage.string, greedy:true, alias: 'yara_string' },
+    'comment': [{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0, alias:'yara_comment'},
+                {pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0, alias:'yara_comment'}],
+    'hexnumber': { pattern: yaraLanguage.hexnumber, alias: 'yara_number' },
+    'number': { pattern: yaraLanguage.number, alias: 'yara_number' }
+};
+
 const COL_COUNT = 16
 
 $(document).ready(function () {
@@ -540,9 +561,9 @@ function enable_rules(rule_file, impacted_by,  rule_name){
 }
 
 function rule_name_click_handler(e) {
-    debugger;
     let rule = get_rule_text(e.target.title)
-    $( "#yara_rule_dialog" ).html(`<p>${rule.rule_text}</p>`)
+    let highlighted_text = Prism.highlight(rule.rule_text, Prism.languages.yara, 'yara')
+    $( "#yara_rule_dialog" ).html(`<p>${highlighted_text}</p>`)
     $( "#yara_rule_dialog" ).dialog("option","title",e.target.title).dialog( "open" );
 }
 

@@ -457,3 +457,16 @@ td.condition_res{
 
 }
 
+/* yara highlighting */
+.yara_keyword{
+    color: purple;
+}
+
+.yara_comment{
+    color: green;
+}
+
+.yara_string{
+    color: blue;
+}
+

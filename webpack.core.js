@@ -7,6 +7,7 @@ module.exports = {
     entry: {
         main: ['./src/js/external/jquery.layout_and_plugins.min.js',
             './src/js/external/jquery.lazytable.js',
+            './src/js/external/prism.js',
             './src/js/main.js'],
         worker: [ './src/js/hex_exp_worker.js'],
         operators: ['./src/js/operators.js']
