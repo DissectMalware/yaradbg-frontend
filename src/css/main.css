@@ -442,6 +442,13 @@ td.condition_res{
     background-color: lightsteelblue;
 }
 
+#new_yara_rule_dialog > div{
+    display: inline-block;
+    float: left;
+    width: 50%;
+    height: 100%;
+}
+
 #main_tab h1 { font-family: 'Open Sans Condensed', sans-serif; font-size: 64px; }
 
 #main_tab p, #yara_panel p { font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 28px; margin: 0 0 12px; }

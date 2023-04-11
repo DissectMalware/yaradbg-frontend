@@ -1,4 +1,6 @@
 import style from '../css/main.css'
+import CodeFlask from '../js/external/codeflask.min.js';
+
 var outerLayout, middleLayout, innerLayout;
 var worker = new Worker('worker.js');
 const zip = require('./external/zip-no-worker-inflate.min');
@@ -64,6 +66,25 @@ $(document).ready(function () {
             $(this).dialog('option', 'maxHeight', $(window).height());
         }
     }).css("white-space","pre-wrap");
+
+    $( "#new_yara_rule_dialog" ).dialog({
+        autoOpen: false,
+        modal: true,
+        width: $(window).width(),
+        height: $(window).height(),
+        closeOnEscape: false,
+		draggable: false,
+		resizable: false,
+    }).css("white-space","pre-wrap");
+
+    $(window).resize(function () {
+        $('.ui-dialog[aria-describedby=new_yara_rule_dialog]').css({
+             'width': $(window).width(),
+             'height': $(window).height(),
+             'left': '0px',
+             'top':'0px'
+        });
+     }).resize();
 
 
     $( "#yara_rule_dependency_dialog" ).dialog({
@@ -300,6 +321,8 @@ $(document).ready(function () {
 
     $(".ui-closable-tab").on('click', close_tab_event_handler);
 
+    $('#new_yara_button').on('click', new_yara_rule_click_handler)
+
 
     $('#tabpanel').on("mouseenter mouseleave", "span.hex_byte", function (e) {
         $(this).toggleClass("active");
@@ -480,6 +503,7 @@ function add_yara_rules(rule_json, yara_file_content) {
     });
 
     $('.yara_rule_header').html(` <img src="img/yara-icon.png"/>`)
+
 
     $('#yara_panel').data('rules', rule_file)
     $('#yara_panel').data('impact_on', impact_on)
@@ -707,6 +731,22 @@ function yara_dependency_graph_click_handler(e) {
     let yara_rule_li = e.target.closest('li')
     let rule_name = $(yara_rule_li).attr('rule_key')
     show_rule_dependency(rule_name)
+}
+
+
+function new_yara_rule_click_handler(e) {
+    $("#new_yara_rule_dialog").html(`
+        <div id='yaraEditor'>
+            Editor
+        </div>
+        <div>
+            Test file
+        </div>`)
+    
+    const flask = new CodeFlask('#yaraEditor', {
+        language: 'js',
+    });
+    $("#new_yara_rule_dialog").dialog("option", "title", `New Yara Rule`).dialog("open");
 }
 
 function show_rule_dependency(rule_name){
