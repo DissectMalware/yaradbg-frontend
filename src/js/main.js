@@ -1,9 +1,10 @@
 import style from '../css/main.css'
-import CodeFlask from '../js/external/codeflask.min.js';
+// import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
 var outerLayout, middleLayout, innerLayout;
 var worker = new Worker('worker.js');
 const zip = require('./external/zip-no-worker-inflate.min');
+let monaco
 
 zip.configure({
     useWebWorkers: false
@@ -30,9 +31,48 @@ Prism.languages.yara = {
     'number': { pattern: yaraLanguage.number, alias: 'yara_number' }
 };
 
+/*monaco.languages.registerCompletionItemProvider('YARA', {
+    provideCompletionItems: function(model, position) {
+      // List of YARA keywords
+      const keywords = [
+        'all', 'and', 'any', 'ascii', 'at', 'base64', 'base64wide', 'condition',
+        'contains', 'endswith', 'entrypoint', 'false', 'filesize', 'for', 'fullword', 'global',
+        'import', 'icontains', 'iendswith', 'iequals', 'in', 'include', 'int16', 'int16be',
+        'int32', 'int32be', 'int8', 'int8be', 'istartswith', 'matches', 'meta', 'nocase',
+        'none', 'not', 'of', 'or', 'private', 'rule', 'startswith', 'strings',
+        'them', 'true', 'uint16', 'uint16be', 'uint32', 'uint32be', 'uint8', 'uint8be',
+        'wide', 'xor', 'defined'
+      ];
+  
+      // Get the current line of text and find the word being typed
+      const lineText = model.getLineContent(position.lineNumber);
+      const word = model.getWordUntilPosition(position);
+  
+      // Check if the current word is a YARA keyword
+      const match = lineText.substring(0, word.startColumn - 1).match(/(\w+)$/);
+      if (match && match[1]) {
+        const prefix = match[1];
+        const suggestions = keywords.filter(keyword => keyword.startsWith(prefix)).map(keyword => {
+          return {
+            label: keyword,
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: keyword
+          };
+        });
+        return {
+          suggestions: suggestions
+        };
+      }
+      return { suggestions: [] };
+    }
+  });*/
+  
+
 const COL_COUNT = 16
 
 $(document).ready(function () {
+
+    loadMonaco();
     $('html').show();
 
     $( "#yara_rule_dialog" ).dialog({
@@ -355,6 +395,12 @@ $(document).ready(function () {
 
 
 });
+
+function loadMonaco() {
+    return import(/* webpackChunkName: "monaco-editor" */ 'monaco-editor/esm/vs/editor/editor.api').then((module) => {
+    monaco = module;
+    });
+}
 
 function is_valid_web_link(string) {
     let url;
@@ -735,18 +781,49 @@ function yara_dependency_graph_click_handler(e) {
 
 
 function new_yara_rule_click_handler(e) {
-    $("#new_yara_rule_dialog").html(`
-        <div id='yaraEditor'>
-            Editor
-        </div>
-        <div>
-            Test file
-        </div>`)
+
     
-    const flask = new CodeFlask('#yaraEditor', {
-        language: 'js',
-    });
-    $("#new_yara_rule_dialog").dialog("option", "title", `New Yara Rule`).dialog("open");
+    var yara_example = `
+    rule rule_name
+    {
+        strings:
+            $string = "text here"
+
+        condition:
+            $string
+    }
+    `
+
+    load_yara_editor(yara_example)
+
+}
+
+function load_yara_editor(yara_content){
+    $("#new_yara_rule_dialog").html(`
+    <div id='yaraEditor'>
+    </div>
+    <div>
+        Test file
+    </div>`)
+
+    var monaco_options = {
+        value: yara_content,
+        language: 'javascript',
+        automaticLayout: true,
+        scrollBeyondLastLine: false
+    }
+
+    if(monaco === undefined){
+        loadMonaco().then(() => {
+            monaco.editor.create(document.getElementById('yaraEditor'), monaco_options);
+            $("#new_yara_rule_dialog").dialog("option", "title", `Yara Rule Editor`).dialog("open");
+        })
+    }
+    else{
+        monaco.editor.create(document.getElementById('yaraEditor'), monaco_options );
+        $("#new_yara_rule_dialog").dialog("option", "title", `Yara Rule Editor`).dialog("open");
+
+    }
 }
 
 function show_rule_dependency(rule_name){
