@@ -1,1 +1,518 @@
-var worker;(()=>{if("function"==typeof importScripts){function e(e){let t=null,n=0;for(let r=0;r<e.length;r++)if(e[r].startsWith("chr "))t=e[r].split(" "),n=parseInt(t[1],16),n>=65&&n<=90&&(n|=32),t[1]=n.toString(16),e[r]=t.join(" ");else if(e[r].startsWith("chrc ")){t=e[r].split(" ");let n=t[1].split(",");n[12]=(parseInt(n[12],16)|254&parseInt(n[8],16)).toString(16),n[13]=(parseInt(n[13],16)|255&parseInt(n[9],16)).toString(16),n[14]=(parseInt(n[14],16)|255&parseInt(n[10],16)).toString(16),n[15]=(parseInt(n[15],16)|7&parseInt(n[11],16)).toString(16),t[1]=n.join(",")+";",e[r]=t.join(" ")}}function t(e){let t=[];e=(e=(e=(e=(e=e.replaceAll("\\\\","\\")).replaceAll("\\n","\n")).replaceAll("\\r","\r")).replaceAll("\\t","\t")).replaceAll('\\"','"');for(let n=0;n<e.length;n++)t.push(`chr ${e.charCodeAt(n).toString(16)}`);return t.push("match"),t}function n(e){let t={no_case:!1,ascii:!1,wide:!1};for(let n=0;n<e.length;n++)switch(e[n].modifier){case"nocase":t.no_case=!0;break;case"ascii":t.ascii=!0;break;case"wide":t.wide=!0}return 0==t.wide&&(t.ascii=!0),t}function r(e,t,n,r=!1){let l=0,i=[],o=null,c=function(e){let t=[],n=e,r=!1,l=!1,i=null;for(let e=0;e<n.length;e++){if(i=n[e].split(/[ ,]/),"chr"==i[0])r=i[1].startsWith("?")?0:240,l=i[1].endsWith("?")?0:15,i[1]=parseInt(i[1].replace("?","0"),16),i.push(l|r);else if("chrc"==i[0])for(let e=1;e<i.length;e++)i[e]=parseInt(i[e],16);else"jmp"==i[0]?i[1]=a(e,i[1]):i[0].startsWith("split")?(i[1]=a(e,i[1]),i[2]=a(e,i[2])):"ignore"==i[0]&&(i[1]=parseInt(i[1]),i[2]=parseInt(i[2]));t.push(i)}return t}(t);"chr"==c[0][0]&&c[0][1];let p=[];for(let e=0;e<10;e++)p.push({pc:0,priority:0});let u=performance.now();for(;l<e.length-1&&(o=s(e,c,l,p,n,r),null!=o);)l=o.start+1,i.push(o);return(performance.now()-u).toString(),i}function l(e,t,n){let r=null;return 0!=e.length?(r=e.pop(),r.pc=t,r.priority=n):r={pc:t,priority:n},r}function i(e,t){e.push(...t),t.length=0}function s(e,t,n,r,s,a=!1){let c=[];c.push(l(r,0,0));let p=[],u=0,h=null,f=null,g=!1,d=null,_=[],y=null,m=!1,I=a?2:1,b=null;for(let w=n;w<e.length-1;w+=I){m=!1,b=e[w],s&&b>=65&&b<=90&&(b|=32);for(let i=0;i<c.length&&0==m;i++)switch(u=c[i].pc,f=t[u],h=f[0],h){case"chr":if(g=0==f[2]||f[1]==(b&f[2]),g&&a&&0!=e[w+1]&&(g=!1),!1===g){if(0==_.length)break;y=_.pop(),w=y.end,u=y.ignore_loc,y.end-=1,y.start<=y.end&&_.push(y)}o(p,l(r,u+1,c[i].priority));break;case"chrc":let t=1+(e[w]>>3),s=1<<(7&e[w]);if(g=0!=(f[t]&s),!1===g){if(0==_.length)break;y=_.pop(),w=y.end,u=y.ignore_loc,y.end-=1,y.start<=y.end&&_.push(y)}p.push(l(r,u+1,c[i].priority));break;case"ignore":-1==f[2]&&(f[2]=e.length),_.push({start:w+f[1]-1,end:w+f[2]-1,ignore_loc:u}),w=w+f[1]-1,o(p,l(r,u+1,c[i].priority));break;case"splitjmp":o(c,l(r,f[1],c[i].priority)),o(c,l(r,f[2],c[i].priority+1));break;case"splitstay":case"split":o(c,l(r,f[1],c[i].priority+1)),o(c,l(r,f[2],c[i].priority));break;case"jmp":o(c,l(r,f[1],c[i].priority));break;case"match":(null==d||d.end<w-1)&&(d={start:n,end:w-1,match:!0}),m=!0}if(0==p.length){if(null!=d)return d;c=[],i(r,c),w=n+1-I,n+=1,c.push(l(r,0,0))}else i(r,c),c=p,p=[]}for(let r=0;r<c.length&&0==m;r++)u=c[r].pc,f=t[u],h=f[0],"match"===h&&((null==d||d.end<e.length-1)&&(d={start:n,end:e.length-1,match:!0}),m=!0);if(0===p.length){if(null!=d)return d;c=[],i(r,c)}return d}function o(e,t){e.push(t);let n=e.length-1;for(let t=e.length-2;t>=0&&e[n].priority<e[t].priority;t--){let r=e[n];e[n]=e[t],e[t]=r,n=t}}function a(e,t){let n=t;return t.startsWith("[")?(n=t.substr(1,t.length-2),n=parseInt(n)+e):n=parseInt(n),n}self.importScripts("operators.js"),self.onmessage=function(l){let i=l.data,s=1,o=new Uint8Array(1);o[0]=255;let a=(p=o,(u=new(c=i.file).constructor(c.length+p.length)).set(c,0),u.set(p,c.length),u);var c,p,u;i.rules.forEach((function(l,o){try{let l=function(l,i,s){let o={strings:new Map,condition:[]},a=i.get(s);return"undefiend"!=typeof a.string&&function(l,i,s){let o=null;for(let e=0;e<l.length;e++)s.set(l[e].str_name.slice(1),[]);for(const a in l){o=null;let c=l[a],p=n(c.modifiers),u=null;"hex_exp_bytecode"==c.type||"regex_expression_bytecode"==c.type?u=c.val:"literal_string"==c.type&&(c.val=c.val.substr(1,c.val.length-2),u=t(c.val)),p.no_case&&e(u),p.ascii&&(o=r(i,u,p.no_case));let h=null;if(p.wide&&(h=r(i,u,p.no_case,!0)),null==o?o=h:null!=h&&o.push(...h),null!=o)for(let e=0;e<o.length;e++)s.get(c.str_name.slice(1)).push({string:c,start:o[e].start,end:o[e].end})}}(a.string,l,o.strings),"undefiend"!=typeof a.condition&&operators.eval_condition(l,a.condition,i,o),o}(a,i.rules,o);l.rule_name=o,l.hex_editor_id=i.hex_editor_id,l.completed_rules_count=s,l.active_rules_count=i.rules.size,self.postMessage(l)}catch(e){console.log(`Error processing: ${o}`)}s+=1}))}}worker={}})();
+var worker;
+/******/ (() => { // webpackBootstrap
+var __webpack_exports__ = {};
+/*!**********************************!*\
+  !*** ./src/js/hex_exp_worker.js ***!
+  \**********************************/
+if ('function' === typeof importScripts) {
+
+    self.importScripts("operators.js")
+
+    self.onmessage = function (e) {
+        let data = e.data
+        let count = 1
+        let extra_byte = new Uint8Array(1);
+        extra_byte[0] = 255
+
+        let file_content = concat_typed_array(data.file, extra_byte)
+        data.rules.forEach(function (value, key) {
+            try {
+                let res = match_rule(file_content, data.rules, key)
+                res.rule_name = key;
+                res.hex_editor_id = data.hex_editor_id;
+                res.completed_rules_count = count;
+                res.active_rules_count = data.rules.size
+                self.postMessage(res);
+            } catch (e) {
+                console.log(`Error processing: ${key}`)
+            }
+            count += 1;
+        });
+    }
+
+    function concat_typed_array(a, b) { // a, b TypedArray of same type
+        var c = new (a.constructor)(a.length + b.length);
+        c.set(a, 0);
+        c.set(b, a.length);
+        return c;
+    }
+
+    function match_rule(file, rules, rule_name) {
+        //debugger;
+        let evaluated_rule = {strings: new Map(), condition: []}
+        let rule = rules.get(rule_name)
+
+        if (typeof rule.string !== 'undefiend') {
+            match_strings(rule.string, file, evaluated_rule.strings)
+        }
+        if (typeof rule.condition !== 'undefiend') {
+            operators.eval_condition(file, rule.condition, rules, evaluated_rule)
+        }
+        return evaluated_rule
+    }
+
+
+    function match_strings(strings, file, rule_result) {
+
+        let matches = null
+        for (let i = 0; i < strings.length; i++) {
+            rule_result.set(strings[i].str_name.slice(1), [])
+        }
+        for (const index in strings) {
+            matches = null
+            let string = strings[index]
+
+            let modifiers = get_string_modifiers(string.modifiers)
+            let bytecode = null
+
+            if (string.type == 'hex_exp_bytecode' ||
+                string.type == 'regex_expression_bytecode') {
+                bytecode = string.val
+            } else if (string.type == 'literal_string') {
+                string.val = string.val.substr(1, string.val.length - 2)
+                bytecode = convert_to_bytecode(string.val)
+            }
+
+            if(modifiers.no_case){
+                convert_bytecode_to_lowercase(bytecode)
+            }
+
+            if (modifiers.ascii) {
+                matches = find_all(file, bytecode, modifiers.no_case)
+            }
+
+            let wide_matches = null;
+            if (modifiers.wide) {
+                wide_matches = find_all(file, bytecode, modifiers.no_case, true)
+            }
+
+            if (matches == null)
+                matches = wide_matches
+            else if (wide_matches != null)
+                matches.push(...wide_matches)
+
+            if (matches != null) {
+                for (let i = 0; i < matches.length; i++) {
+                    rule_result.get(string.str_name.slice(1)).push({
+                        string: string,
+                        start: matches[i].start,
+                        end: matches[i].end
+                    })
+                }
+            }
+
+        }
+
+        return matches
+    }
+
+    function convert_bytecode_to_lowercase(bytecode){
+        let parts = null
+        let ascii_code = 0
+        for(let i=0; i<bytecode.length; i++){
+            if( bytecode[i].startsWith('chr ')) {
+                parts = bytecode[i].split(' ')
+                ascii_code = parseInt(parts[1], 16)
+                if(ascii_code >= 65 && ascii_code <= 90){
+                    ascii_code = ascii_code | 32
+                }
+                parts[1] = ascii_code.toString(16)
+                bytecode[i] = parts.join(' ')
+            }
+            else if( bytecode[i].startsWith('chrc ')) {
+                parts = bytecode[i].split(' ')
+                let char_bitmap = parts[1].split(',')
+                char_bitmap[12] = (parseInt(char_bitmap[12],16) | (parseInt(char_bitmap[8],16)  & 0b11111110)).toString(16)
+                char_bitmap[13] = (parseInt(char_bitmap[13],16) | (parseInt(char_bitmap[9],16)  & 0xff)).toString(16)
+                char_bitmap[14] = (parseInt(char_bitmap[14],16) | (parseInt(char_bitmap[10],16) & 0xff)).toString(16)
+                char_bitmap[15] = (parseInt(char_bitmap[15],16) | (parseInt(char_bitmap[11],16) & 0b00000111)).toString(16)
+
+                parts[1] =char_bitmap.join(',')+';'
+                bytecode[i] = parts.join(' ')
+            }
+        }
+    }
+
+
+
+    function convert_to_bytecode(string) {
+        let bytecode = []
+
+        string = string.replaceAll('\\\\', '\\')
+        string = string.replaceAll('\\n', '\n')
+        string = string.replaceAll('\\r', '\r')
+        string = string.replaceAll('\\t', '\t')
+        string = string.replaceAll('\\"', '"')
+
+        for (let i = 0; i < string.length; i++) {
+            bytecode.push(`chr ${string.charCodeAt(i).toString(16)}`)
+        }
+        bytecode.push('match')
+        return bytecode
+    }
+
+    function get_string_modifiers(modifiers) {
+        let result = {
+            no_case: false,
+            ascii: false,
+            wide: false
+        }
+
+        for (let i = 0; i < modifiers.length; i++) {
+            switch (modifiers[i].modifier) {
+                case 'nocase':
+                    result.no_case = true;
+                    break
+                case 'ascii':
+                    result.ascii = true;
+                    break
+                case 'wide':
+                    result.wide = true;
+            }
+        }
+
+        if (result.wide == false)
+            result.ascii = true
+
+        return result
+    }
+
+    function find_all(file_content, regex_bytecode, no_case, is_wide = false) {
+        let index = 0
+        let matches = []
+        let match = null
+
+        let instructions = get_instructions(regex_bytecode)
+        let parts = []
+        let has_start_mask, has_end_mask;
+        var lookahead = null
+
+        if (instructions[0][0] == 'chr')
+            lookahead = instructions[0][1]
+
+        let thread_pool = []
+        for (let i = 0; i < 10; i++) {
+            thread_pool.push({pc: 0, priority: 0})
+        }
+
+        let start = performance.now()
+        while (index < file_content.length - 1) {
+            match = find(file_content, instructions, index, thread_pool, no_case, is_wide)
+            if (match != null) {
+                index = match.start + 1
+                matches.push(match)
+            } else {
+                break
+            }
+        }
+        let end = performance.now()
+        let diff = (end - start).toString()
+
+        return matches
+    }
+
+    function get_instructions(bytecode) {
+        let instructions = []
+        let lines = bytecode
+        let has_start_mask = false
+        let has_end_mask = false
+        let parts = null
+
+        for (let i = 0; i < lines.length; i++) {
+            parts = lines[i].split(/[ ,]/)
+            if (parts[0] == 'chr') {
+                has_start_mask = parts[1].startsWith('?') ? 0 : 0xf0
+                has_end_mask = parts[1].endsWith('?') ? 0 : 0x0f
+                parts[1] = parseInt(parts[1].replace('?', '0'), 16)
+                parts.push(has_end_mask | has_start_mask)
+            } else if (parts[0] == 'chrc') {
+                for (let i = 1; i < parts.length; i++) {
+                    parts[i] = parseInt(parts[i], 16)
+                }
+            } else if (parts[0] == 'jmp') {
+                parts[1] = get_jmp_loc(i, parts[1])
+            } else if (parts[0].startsWith('split')) {
+                parts[1] = get_jmp_loc(i, parts[1])
+                parts[2] = get_jmp_loc(i, parts[2])
+            } else if (parts[0] == 'ignore') {
+                parts[1] = parseInt(parts[1])
+                parts[2] = parseInt(parts[2])
+            }
+            instructions.push(parts)
+        }
+        return instructions
+    }
+
+    function add_thread(instructions, pc, queue, content) {
+        let instruction = instructions[pc]
+        let operator = instruction[0]
+
+        switch (operator) {
+            case 'splitjmp':
+                add_thread(instructions, instruction[2], queue, content)
+                add_thread(instructions, instruction[1], queue, content)
+                break
+            case 'splitstay':
+                add_thread(instructions, instruction[1], queue, content)
+                add_thread(instructions, instruction[2], queue, content)
+                break
+            case 'split':
+                add_thread(instructions, instruction[1], queue, content)
+                add_thread(instructions, instruction[2], queue, content)
+                break
+            case 'jmp':
+                add_thread(instructions, instruction[1], queue, content)
+                break
+            case 'chr':
+                is_match = instruction[2] == 0 ? true : instruction[1] == (content & instruction[2])
+                if (is_match) {
+                    queue.push(pc)
+                }
+                break
+            case 'chrc':
+                let bitmap_index = (content >> 3) + 1
+                let bit_index = (content & 0x07)
+                let mask = 1 << bit_index
+                is_match = ((instruction[bitmap_index] & mask) != 0)
+                if (is_match)
+                    queue.push(pc)
+                break
+            default:
+                queue.push(pc)
+        }
+
+    }
+
+    function get_thread(thread_pool, pc, priority) {
+        let new_thread = null
+        if (thread_pool.length != 0) {
+            new_thread = thread_pool.pop()
+            new_thread.pc = pc
+            new_thread.priority = priority
+        } else
+            new_thread = {pc: pc, priority: priority}
+        return new_thread
+
+    }
+
+    function clear_thread_array(thread_pool, thread_array) {
+        thread_pool.push(...thread_array)
+        thread_array.length = 0
+    }
+
+
+    function find(file_content, instructions, start_index, thread_pool, no_case, is_wide = false) {
+
+        let current_state = []
+        current_state.push(get_thread(thread_pool, 0, 0))
+        // add_thread(instructions, 0, current_state, file_content[start_index])
+        let next_state = []
+
+        let c_thread = null
+        let c_prgcounter = 0
+        let op = null
+        let instruction = null
+        let is_match = false
+
+        let found_match = null
+
+        let ignore_stack = []
+        let ignore = null
+
+        let skip = false
+        let step = is_wide ? 2 : 1
+        let current_char = null
+        for (let i = start_index; i < file_content.length - 1; i += step) {
+            skip = false;
+            current_char = file_content[i]
+            if(no_case && current_char >= 65 && current_char <= 90){
+                current_char = current_char | 32
+            }
+
+            for (let t = 0; t < current_state.length && skip == false; t++) {
+                c_prgcounter = current_state[t].pc
+                instruction = instructions[c_prgcounter]
+                op = instruction[0]
+                switch (op) {
+                    case 'chr':
+
+                        is_match = instruction[2] == 0 ? true : instruction[1] == (current_char & instruction[2])
+
+                        if (is_match && is_wide && file_content[i + 1] != 0)
+                            is_match = false
+
+                        if (is_match === false) {
+                            if (ignore_stack.length == 0) {
+                                break;
+                            } else {
+                                ignore = ignore_stack.pop()
+                                i = ignore.end
+                                c_prgcounter = ignore.ignore_loc
+                                ignore.end -= 1
+                                if (ignore.start <= ignore.end) {
+                                    ignore_stack.push(ignore)
+                                }
+                            }
+                        }
+                        add_priority_queue(next_state, get_thread(thread_pool, c_prgcounter + 1, current_state[t].priority))
+                        // add_thread(instructions, c_prgcounter + 1, next_state, file_content[i+1] )
+                        break;
+                    case 'chrc':
+                        let bitmap_index = (file_content[i] >> 3) + 1
+                        let bit_index = (file_content[i] & 0x07)
+                        let mask = 1 << bit_index
+                        is_match = ((instruction[bitmap_index] & mask) != 0)
+                        if (is_match === false) {
+                            if (ignore_stack.length == 0) {
+                                break;
+                            } else {
+                                ignore = ignore_stack.pop()
+                                i = ignore.end
+                                c_prgcounter = ignore.ignore_loc
+                                ignore.end -= 1
+                                if (ignore.start <= ignore.end) {
+                                    ignore_stack.push(ignore)
+                                }
+                            }
+                        }
+                        // next_state.push(c_prgcounter + 1)
+                        next_state.push(get_thread(thread_pool, c_prgcounter + 1, current_state[t].priority))
+                        //add_thread(instructions, c_prgcounter + 1, next_state,  file_content[i+1])
+                        break;
+                    case 'ignore':
+                        if (instruction[2] == -1)
+                            instruction[2] = file_content.length
+                        ignore_stack.push({
+                            start: i + instruction[1] - 1,
+                            end: i + instruction[2] - 1,
+                            ignore_loc: c_prgcounter
+                        })
+                        i = i + instruction[1] - 1
+                        // next_state.push(c_prgcounter + 1)
+                        add_priority_queue(next_state, get_thread(thread_pool, c_prgcounter + 1, current_state[t].priority))
+                        break
+                    case 'splitjmp':
+                        add_priority_queue(current_state, get_thread(thread_pool, instruction[1], current_state[t].priority))
+                        add_priority_queue(current_state, get_thread(thread_pool, instruction[2], current_state[t].priority + 1))
+                        break
+                    case 'splitstay':
+                        add_priority_queue(current_state, get_thread(thread_pool, instruction[1], current_state[t].priority + 1))
+                        add_priority_queue(current_state, get_thread(thread_pool, instruction[2], current_state[t].priority))
+                        break
+                    case 'split':
+                        add_priority_queue(current_state, get_thread(thread_pool, instruction[1], current_state[t].priority + 1))
+                        add_priority_queue(current_state, get_thread(thread_pool, instruction[2], current_state[t].priority))
+                        break
+                    case 'jmp':
+                        add_priority_queue(current_state, get_thread(thread_pool, instruction[1], current_state[t].priority))
+                        break
+
+                    case 'match':
+                        if (found_match == null)
+                            found_match = {
+                                start: start_index,
+                                end: i - 1,
+                                match: true
+                            }
+                        else {
+                            if (found_match.end < (i - 1)) {
+                                found_match = {
+                                    start: start_index,
+                                    end: i - 1,
+                                    match: true
+                                }
+                            }
+                        }
+                        skip = true
+                        break;
+
+                }
+            }
+
+            if (next_state.length == 0) {
+                if (found_match != null) {
+                    return found_match
+                }
+                current_state = []
+                clear_thread_array(thread_pool, current_state)
+                i = start_index + 1 - step
+                start_index += 1
+                current_state.push(get_thread(thread_pool, 0, 0))
+
+            } else {
+                clear_thread_array(thread_pool, current_state)
+                current_state = next_state
+                next_state = []
+
+            }
+        }
+
+        // if bytecode matches with the end of file_content
+        for (let t = 0; t < current_state.length && skip == false; t++) {
+            c_prgcounter = current_state[t].pc
+            instruction = instructions[c_prgcounter]
+            op = instruction[0]
+            switch (op) {
+                case 'match':
+                    if (found_match == null)
+                        found_match = {
+                            start: start_index,
+                            end: file_content.length - 1,
+                            match: true
+                        }
+                    else {
+                        if (found_match.end < (file_content.length - 1)) {
+                            found_match = {
+                                start: start_index,
+                                end: file_content.length - 1,
+                                match: true
+                            }
+                        }
+                    }
+                    skip = true
+                    break;
+
+            }
+        }
+
+        if (next_state.length === 0) {
+            if (found_match != null) {
+                return found_match
+            }
+            current_state = []
+            clear_thread_array(thread_pool, current_state)
+        }
+
+        return found_match
+    }
+
+    function add_priority_queue(queue, state) {
+        queue.push(state)
+        let state_loc = queue.length - 1
+        for (let i = queue.length - 2; i >= 0; i--) {
+            if (queue[state_loc].priority < queue[i].priority) {
+                let tmp = queue[state_loc];
+                queue[state_loc] = queue[i];
+                queue[i] = tmp;
+                state_loc = i
+            } else {
+                break
+            }
+        }
+    }
+
+
+    function get_jmp_loc(current_loc, jump_addr) {
+        let final_add = jump_addr
+        if (jump_addr.startsWith('[')) {
+            final_add = jump_addr.substr(1, jump_addr.length - 2)
+            final_add = parseInt(final_add) + current_loc
+        } else
+            final_add = parseInt(final_add)
+        return final_add
+    }
+
+}
+worker = __webpack_exports__;
+/******/ })()
+;

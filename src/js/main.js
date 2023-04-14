@@ -1,4 +1,5 @@
 import style from '../css/main.css'
+import { yaraConfig, yaraDef } from '../js/external/yara_def'
 // import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
 var outerLayout, middleLayout, innerLayout;
@@ -808,22 +809,36 @@ function load_yara_editor(yara_content){
 
     var monaco_options = {
         value: yara_content,
-        language: 'javascript',
+        language: 'Yara',
         automaticLayout: true,
-        scrollBeyondLastLine: false
+        scrollBeyondLastLine: false,
+        theme: 'Yara-theme'
     }
 
     if(monaco === undefined){
         loadMonaco().then(() => {
+            register_yara()
             monaco.editor.create(document.getElementById('yaraEditor'), monaco_options);
             $("#new_yara_rule_dialog").dialog("option", "title", `Yara Rule Editor`).dialog("open");
         })
     }
     else{
+        register_yara()
         monaco.editor.create(document.getElementById('yaraEditor'), monaco_options );
         $("#new_yara_rule_dialog").dialog("option", "title", `Yara Rule Editor`).dialog("open");
 
     }
+}
+
+function register_yara(){
+    if (!monaco.languages.getLanguages().some(({ id }) => id === 'yara')) {
+        // Register a new language
+        monaco.languages.register({ id: 'Yara' });
+        // Register a tokens provider for the language
+        monaco.languages.setMonarchTokensProvider('Yara', yaraDef);
+        // Set the editing configuration for the language
+        monaco.languages.setLanguageConfiguration('Yara', yaraConfig);
+    }    
 }
 
 function show_rule_dependency(rule_name){
