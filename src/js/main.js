@@ -111,21 +111,21 @@ $(document).ready(function () {
     $( "#new_yara_rule_dialog" ).dialog({
         autoOpen: false,
         modal: true,
-        width: $(window).width(),
-        height: $(window).height(),
+        width: 600,
+        height: $(window).height()- 100,
         closeOnEscape: false,
-		draggable: false,
-		resizable: false,
-    }).css("white-space","pre-wrap");
+		draggable: true,
+		resizable: true,
+    });
 
-    $(window).resize(function () {
+    /*$(window).resize(function () {
         $('.ui-dialog[aria-describedby=new_yara_rule_dialog]').css({
              'width': $(window).width(),
              'height': $(window).height(),
              'left': '0px',
              'top':'0px'
         });
-     }).resize();
+     }).resize();*/
 
 
     $( "#yara_rule_dependency_dialog" ).dialog({
@@ -361,8 +361,6 @@ $(document).ready(function () {
 
 
     $(".ui-closable-tab").on('click', close_tab_event_handler);
-
-    $('#new_yara_button').on('click', new_yara_rule_click_handler)
 
 
     $('#tabpanel').on("mouseenter mouseleave", "span.hex_byte", function (e) {
@@ -654,7 +652,11 @@ function removeNestedPositions(positions) {
   }
 
 function rule_name_click_handler(e) {
+    
+ 
     let rule = get_rule_text(e.target.title)
+    load_yara_editor(rule.rule_text)
+    return
     let highlighted_text = Prism.highlight(rule.rule_text, Prism.languages.yara, 'yara')
 
     let active_tab = $('.hex_editor_tab.ui-tabs-active a')
@@ -781,31 +783,11 @@ function yara_dependency_graph_click_handler(e) {
 }
 
 
-function new_yara_rule_click_handler(e) {
-
-    
-    var yara_example = `
-    rule rule_name
-    {
-        strings:
-            $string = "text here"
-
-        condition:
-            $string
-    }
-    `
-
-    load_yara_editor(yara_example)
-
-}
-
 function load_yara_editor(yara_content){
     $("#new_yara_rule_dialog").html(`
     <div id='yaraEditor'>
     </div>
-    <div>
-        Test file
-    </div>`)
+    `)
 
     var monaco_options = {
         value: yara_content,

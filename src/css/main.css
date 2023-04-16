@@ -445,7 +445,7 @@ td.condition_res{
 #new_yara_rule_dialog > div{
     display: inline-block;
     float: left;
-    width: 50%;
+    width: 100%;
     height: 100%;
 }
 
