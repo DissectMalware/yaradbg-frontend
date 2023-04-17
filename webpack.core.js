@@ -44,8 +44,14 @@ module.exports = {
             { test: /\.css$/,  use: ["style-loader", "css-loader"] },
             {
 				test: /\.ttf$/,
-				use: ['file-loader']
-			}
+				type: 'asset/resource',
+                dependency: { not: ['url'] },
+			},
+            {
+                test: /\.woff2?$/i,
+                type: 'asset/resource',
+                dependency: { not: ['url'] },
+            }
         ]
     }
 };

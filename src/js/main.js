@@ -1,4 +1,5 @@
 import style from '../css/main.css'
+import codicon from '../css/external/codicon.css'
 import { yaraConfig, yaraDef } from '../js/external/yara_def'
 // import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
@@ -424,7 +425,12 @@ function parse_yara(text, file_name){
         cache: false
     }).done(function (html) {
         $('#yara_panel .spinner').removeClass('lds-facebook')
-        add_yara_rules(html, text)
+        let rule_json = JSON.parse(html)
+        if('error' in rule_json){
+            alert(rule_json.error)
+            return
+        }
+        add_yara_rules(rule_json, text)
     }).fail(function (response) {
         $('#yara_panel .spinner').removeClass('lds-facebook')
         if (response.status == 422) {
@@ -475,11 +481,7 @@ function filter_yara_rules_change_handler(e){
 }
 
 function add_yara_rules(rule_json, yara_file_content) {
-    let rule_file = JSON.parse(rule_json)
-    if('error' in rule_file){
-        alert(rule_file.error)
-        return
-    }
+    let rule_file = rule_json
     let rules_html = ''
     let rule_id = 0
     $('#yara_rules').addClass("yara_sig_panel")
@@ -653,9 +655,10 @@ function removeNestedPositions(positions) {
 
 function rule_name_click_handler(e) {
     
- 
-    let rule = get_rule_text(e.target.title)
-    load_yara_editor(rule.rule_text)
+    let rules_text = $('#yara_panel').data('rules_content');
+    let rule = get_rule(e.target.title)
+    let rule_line = rule.line
+    load_yara_editor(rules_text, rule_line - 1)
     return
     let highlighted_text = Prism.highlight(rule.rule_text, Prism.languages.yara, 'yara')
 
@@ -714,11 +717,16 @@ function rule_name_click_handler(e) {
 }
 
 function get_rule_text(rule_name){
-    let rules = $('#yara_panel').data('rules')
     let rules_content = $('#yara_panel').data('rules_content')
-    let rule_object = rules.rules[rule_name]
+    let rule_object = get_rule(rule_name)
     let rule_text = rules_content.slice(rule_object.start_pos, rule_object.end_pos)
     return {start_pos: rule_object.start_pos, rule_text: rule_text}
+}
+
+function get_rule(rule_name){
+    let rules = $('#yara_panel').data('rules')
+    let rule_object = rules.rules[rule_name]
+    return rule_object
 }
 function rule_eval_detail_click_handler(e){
     debugger;
@@ -783,11 +791,18 @@ function yara_dependency_graph_click_handler(e) {
 }
 
 
-function load_yara_editor(yara_content){
+function load_yara_editor(yara_content, line = 0) {
     $("#new_yara_rule_dialog").html(`
     <div id='yaraEditor'>
     </div>
     `)
+
+    var editor = createYaraEditor(yara_content, line)
+
+    return editor
+}
+
+function createYaraEditor(yara_content, line) {
 
     var monaco_options = {
         value: yara_content,
@@ -797,20 +812,104 @@ function load_yara_editor(yara_content){
         theme: 'Yara-theme'
     }
 
-    if(monaco === undefined){
-        loadMonaco().then(() => {
-            register_yara()
-            monaco.editor.create(document.getElementById('yaraEditor'), monaco_options);
-            $("#new_yara_rule_dialog").dialog("option", "title", `Yara Rule Editor`).dialog("open");
-        })
-    }
-    else{
-        register_yara()
-        monaco.editor.create(document.getElementById('yaraEditor'), monaco_options );
-        $("#new_yara_rule_dialog").dialog("option", "title", `Yara Rule Editor`).dialog("open");
+    return loadMonaco().then(() => {
+        register_yara();
+        let yara_editor = monaco.editor.create(
+            document.getElementById('yaraEditor'),
+            monaco_options
+        );
 
-    }
+        const confirmDialog = $("<div>").html("Do you want to save your changes?")
+            .dialog({
+                autoOpen: false,
+                modal: true,
+                buttons: {
+                    Yes: function () {
+                        // save changes and close the editor
+                        
+                        var files = new FormData()
+                        const text = yara_editor.getValue()
+                        const blob = new Blob([text], { type: 'text/plain' })
+                        files.append('yarafile', blob, 'yara_file.yar');
+                        $.ajax({
+                            type: "POST",
+                            processData: false,
+                            contentType: false,
+                            url: "http://localhost:7071/api/yaraparser",
+                            data: files,
+                            cache: false
+                        }).done(function (html) {
+                            $('#yara_panel .spinner').removeClass('lds-facebook')
+                            confirmDialog.dialog("close");
+                            let rule_json = JSON.parse(html)
+                            if('error' in rule_json){
+                                if('error_obj' in rule_json){
+                                    const end_position = yara_editor.getModel().getPositionAt(rule_json.error_obj.token_start_pos + rule_json.error_obj.token_len)
+                                    let markers = [{
+                                        severity: monaco.MarkerSeverity.Error,
+                                        message: rule_json.error,
+                                        startLineNumber: rule_json.error_obj.line,
+                                        startColumn: rule_json.error_obj.column,
+                                        endLineNumber: end_position.lineNumber,
+                                        endColumn: end_position.column
+                                    }];
+                                    monaco.editor.setModelMarkers(yara_editor.getModel(), "owner", markers);
+                                }
+                                alert(rule_json.error)
+                                $("#new_yara_rule_dialog").attr('status', '')
+                                return
+                            }
+                            
+                            add_yara_rules(rule_json, text)
+                            $("#new_yara_rule_dialog").dialog("close");
+                            
+                        }).fail(function (response) {
+                            $(this).dialog("close");
+                            $('#yara_panel .spinner').removeClass('lds-facebook')
+                            if (response.status == 422) {
+                                alert(response.responseText)
+                            } else {
+                                alert('Unknown error')
+                            }
+                        });
+
+                    },
+                    No: function () {
+                        // discard changes and close the editor
+                        $(this).dialog("close");
+                        $("#new_yara_rule_dialog").dialog("close");
+                    },
+                    Cancel: function () {
+                        // do nothing and keep the editor open
+                        $(this).dialog("close");
+                        $("#new_yara_rule_dialog").attr('status', '')
+                    }
+                }
+            });
+        $("#new_yara_rule_dialog")
+            .dialog({
+                title: "Yara Rule Editor",
+                beforeClose: function (event, ui) {
+                    // execute your code here
+                    if (yara_editor.getValue() != yara_content && $(this).attr('status') != 'check') {
+                        $(this).attr('status', 'check')
+                        event.preventDefault();
+
+                        confirmDialog.dialog("open");
+                    }
+                },
+                close: function (event, ui) {
+                    // destroy the editor when the dialog is closed
+                    $(this).attr('status', '')
+                    yara_editor.dispose();
+                }
+            })
+            .dialog("open");
+        if (line >= 1) yara_editor.revealLine(line);
+        return yara_editor; // return the yara_editor instance
+    });
 }
+  
 
 function register_yara(){
     if (!monaco.languages.getLanguages().some(({ id }) => id === 'yara')) {
