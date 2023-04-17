@@ -442,6 +442,15 @@ td.condition_res{
     background-color: lightsteelblue;
 }
 
+.evalDecoration{
+    background-color: rgba(0, 80, 0, 0.2);
+}
+
+.evalFalseDecoration{
+    background-color: rgba(200, 0, 0, 0.2);
+}
+
+
 #new_yara_rule_dialog > div{
     display: inline-block;
     float: left;

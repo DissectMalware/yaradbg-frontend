@@ -20,15 +20,15 @@ const yaraLanguage = {
     comment: /\/\/.*|\/\*[\s\S]*?\*\//g,
     hexnumber: /0x[a-f\d]+/gi,
     number: /\b\d+\b/g
-  };
+};
 
 Prism.languages.yara = {
     'keyword': { pattern: yaraLanguage.keyword, alias: 'yara_keyword' },
     'operator': { pattern: yaraLanguage.operator, alias: 'yara_operator' },
     'punctuation': { pattern: yaraLanguage.punctuation, alias: 'yara_punctuation' },
-    'string': { pattern: yaraLanguage.string, greedy:true, alias: 'yara_string' },
-    'comment': [{pattern:/(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,lookbehind:!0,greedy:!0, alias:'yara_comment'},
-                {pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0,greedy:!0, alias:'yara_comment'}],
+    'string': { pattern: yaraLanguage.string, greedy: true, alias: 'yara_string' },
+    'comment': [{ pattern: /(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/, lookbehind: !0, greedy: !0, alias: 'yara_comment' },
+    { pattern: /(^|[^\\:])\/\/.*/, lookbehind: !0, greedy: !0, alias: 'yara_comment' }],
     'hexnumber': { pattern: yaraLanguage.hexnumber, alias: 'yara_number' },
     'number': { pattern: yaraLanguage.number, alias: 'yara_number' }
 };
@@ -68,7 +68,7 @@ Prism.languages.yara = {
       return { suggestions: [] };
     }
   });*/
-  
+
 
 const COL_COUNT = 16
 
@@ -77,7 +77,7 @@ $(document).ready(function () {
     loadMonaco();
     $('html').show();
 
-    $( "#yara_rule_dialog" ).dialog({
+    $("#yara_rule_dialog").dialog({
         autoOpen: false,
         show: {
             effect: "drop",
@@ -91,9 +91,9 @@ $(document).ready(function () {
         open: function () {
             $(this).dialog('option', 'maxHeight', $(window).height());
         }
-    }).css("white-space","pre-wrap");
+    }).css("white-space", "pre-wrap");
 
-    $( "#yara_rule_eval_dialog" ).dialog({
+    $("#yara_rule_eval_dialog").dialog({
         autoOpen: false,
         show: {
             effect: "drop",
@@ -104,19 +104,19 @@ $(document).ready(function () {
             duration: 500
         },
         width: ($(window).width() > 1200) ? $(window).width() / 3 : $(window).width(),
-        open: function() {
+        open: function () {
             $(this).dialog('option', 'maxHeight', $(window).height());
         }
-    }).css("white-space","pre-wrap");
+    }).css("white-space", "pre-wrap");
 
-    $( "#new_yara_rule_dialog" ).dialog({
+    $("#new_yara_rule_dialog").dialog({
         autoOpen: false,
         modal: true,
         width: 600,
-        height: $(window).height()- 100,
+        height: $(window).height() - 100,
         closeOnEscape: false,
-		draggable: true,
-		resizable: true,
+        draggable: true,
+        resizable: true,
     });
 
     /*$(window).resize(function () {
@@ -129,7 +129,7 @@ $(document).ready(function () {
      }).resize();*/
 
 
-    $( "#yara_rule_dependency_dialog" ).dialog({
+    $("#yara_rule_dependency_dialog").dialog({
         autoOpen: false,
         show: {
             effect: "drop",
@@ -194,9 +194,9 @@ $(document).ready(function () {
 
                     let evaluation_result = $(ui.newPanel).data('evaluation_result')
 
-                    if(typeof evaluation_result !== 'undefined'){
-                        Object.keys(evaluation_result).forEach(function (key){
-                            $(`li[rule_key=${key}]`).addClass(`${evaluation_result[key].eval_res?'matched': 'not_matched'}`)
+                    if (typeof evaluation_result !== 'undefined') {
+                        Object.keys(evaluation_result).forEach(function (key) {
+                            $(`li[rule_key=${key}]`).addClass(`${evaluation_result[key].eval_res ? 'matched' : 'not_matched'}`)
                         })
 
                     }
@@ -244,80 +244,80 @@ $(document).ready(function () {
             }
         })
         .on('dragover drop dragleave', function (event) {
-                event.stopPropagation();
-                event.preventDefault();
-                if (event.type == 'drop') {
-                    let tab_index = null
-                    let file_count = event.originalEvent.dataTransfer.files.length
-                    for (let i = 0; i <file_count ; i++) {
-                        let file = event.originalEvent.dataTransfer.files[i]
+            event.stopPropagation();
+            event.preventDefault();
+            if (event.type == 'drop') {
+                let tab_index = null
+                let file_count = event.originalEvent.dataTransfer.files.length
+                for (let i = 0; i < file_count; i++) {
+                    let file = event.originalEvent.dataTransfer.files[i]
 
-                        const unwrap_encrypted_zip = async (file, password) => {
-                            let reader;
-                            try {
-                                reader = new zip.ZipReader(new zip.BlobReader(file), { password });
-                                const entries = await reader.getEntries();
-                                for (const entry of entries) {
-                                    try {
-                                        let content = new zip.BlobWriter()
-                                        await entry.getData(content);
-                                        let entry_blob = content.blob
-                                        entry_blob.name = entry.filename
-                                        if (entry_blob.size > 20 * 1024 * 1024) {
-                                            alert(`${entry_blob.name} is too big (>20MB)`)
-                                        }
-                                        else {
-                                            tab_index = create_new_hexeditor_tab(entry_blob)
-                                            if(i == file_count - 1 ){
-                                                // refresh and switch to new tab;
-                                                $('#tabpanel').tabs('refresh').tabs("option", "active", tab_index)
-
-                                                $('#tabpanel').css({'backgroundColor': 'white'})
-                                            }
-                                            break
-                                        }
-                                    } catch (error) {
-                                        if (error.message === zip.ERR_ENCRYPTED ||
-                                            error.message === zip.ERR_INVALID_PASSWORD) {
-                                            return false;
-                                        } else {
-                                            throw error;
-                                        }
+                    const unwrap_encrypted_zip = async (file, password) => {
+                        let reader;
+                        try {
+                            reader = new zip.ZipReader(new zip.BlobReader(file), { password });
+                            const entries = await reader.getEntries();
+                            for (const entry of entries) {
+                                try {
+                                    let content = new zip.BlobWriter()
+                                    await entry.getData(content);
+                                    let entry_blob = content.blob
+                                    entry_blob.name = entry.filename
+                                    if (entry_blob.size > 20 * 1024 * 1024) {
+                                        alert(`${entry_blob.name} is too big (>20MB)`)
                                     }
-                                }
-                            } catch {
-                                if (file.size > 20 * 1024 * 1024) {
-                                    alert(`${file.name} is too big (>20MB)`)
-                                }
-                                else {
-                                    tab_index = create_new_hexeditor_tab(file)
-                                    if(i == file_count - 1 ){
-                                        // refresh and switch to new tab;
-                                        $('#tabpanel').tabs('refresh').tabs("option", "active", tab_index)
+                                    else {
+                                        tab_index = create_new_hexeditor_tab(entry_blob)
+                                        if (i == file_count - 1) {
+                                            // refresh and switch to new tab;
+                                            $('#tabpanel').tabs('refresh').tabs("option", "active", tab_index)
 
-                                        $('#tabpanel').css({'backgroundColor': 'white'})
+                                            $('#tabpanel').css({ 'backgroundColor': 'white' })
+                                        }
+                                        break
+                                    }
+                                } catch (error) {
+                                    if (error.message === zip.ERR_ENCRYPTED ||
+                                        error.message === zip.ERR_INVALID_PASSWORD) {
+                                        return false;
+                                    } else {
+                                        throw error;
                                     }
                                 }
                             }
-                            finally {
-                                await reader.close();
+                        } catch {
+                            if (file.size > 20 * 1024 * 1024) {
+                                alert(`${file.name} is too big (>20MB)`)
                             }
- 
-                            return true;
-                        };
+                            else {
+                                tab_index = create_new_hexeditor_tab(file)
+                                if (i == file_count - 1) {
+                                    // refresh and switch to new tab;
+                                    $('#tabpanel').tabs('refresh').tabs("option", "active", tab_index)
 
-                        unwrap_encrypted_zip(file, 'infected')
+                                    $('#tabpanel').css({ 'backgroundColor': 'white' })
+                                }
+                            }
+                        }
+                        finally {
+                            await reader.close();
+                        }
 
-                    }
+                        return true;
+                    };
 
-                } else if (event.type == 'dragover') {
-                    $('#tabpanel').css({'backgroundColor': 'purple'})
-                } else if (event.type == 'dragleave') {
-                    $('#tabpanel').css({'backgroundColor': 'white'})
+                    unwrap_encrypted_zip(file, 'infected')
+
                 }
+
+            } else if (event.type == 'dragover') {
+                $('#tabpanel').css({ 'backgroundColor': 'purple' })
+            } else if (event.type == 'dragleave') {
+                $('#tabpanel').css({ 'backgroundColor': 'white' })
             }
+        }
         )
-        .find(".ui-tabs-nav").sortable({axis: 'x', zIndex: 2}).end()
+        .find(".ui-tabs-nav").sortable({ axis: 'x', zIndex: 2 }).end()
 
 
     $("#yara_panel").on('dragover drop dragleave', (event) => {
@@ -325,7 +325,7 @@ $(document).ready(function () {
         event.preventDefault();
         if (event.type == 'drop') {
 
-            $('#sidebar_yara').css({'backgroundColor': 'white'})
+            $('#sidebar_yara').css({ 'backgroundColor': 'white' })
 
             var reader = new FileReader();
             var startTime = performance.now()
@@ -341,20 +341,20 @@ $(document).ready(function () {
             reader.readAsText(file);
 
         } else if (event.type == 'dragover') {
-            $('#sidebar_yara').css({'backgroundColor': 'purple'})
+            $('#sidebar_yara').css({ 'backgroundColor': 'purple' })
         } else if (event.type == 'dragleave') {
-            $('#sidebar_yara').css({'backgroundColor': 'white'})
+            $('#sidebar_yara').css({ 'backgroundColor': 'white' })
         }
 
-    }).on('paste', function(e){
+    }).on('paste', function (e) {
         let paste = (event.clipboardData || window.clipboardData).getData('text');
-        if(is_valid_web_link(paste)){
-            if(paste.startsWith("https://github.com")){
+        if (is_valid_web_link(paste)) {
+            if (paste.startsWith("https://github.com")) {
                 paste = paste.replace("https://github.com", "https://raw.githubusercontent.com")
                 paste = paste.replace('blob/', '')
             }
         }
-        $.get(paste).success(function(data){
+        $.get(paste).success(function (data) {
             parse_yara(data, "web_content");
         });
 
@@ -398,7 +398,7 @@ $(document).ready(function () {
 
 function loadMonaco() {
     return import(/* webpackChunkName: "monaco-editor" */ 'monaco-editor/esm/vs/editor/editor.api').then((module) => {
-    monaco = module;
+        monaco = module;
     });
 }
 
@@ -412,9 +412,9 @@ function is_valid_web_link(string) {
     return url.protocol === "http:" || url.protocol === "https:";
 }
 
-function parse_yara(text, file_name){
+function parse_yara(text, file_name) {
     var files = new FormData()
-    const blob = new Blob([text], {type : 'text/plain'})
+    const blob = new Blob([text], { type: 'text/plain' })
     files.append('yarafile', blob, file_name);
     $.ajax({
         type: "POST",
@@ -426,7 +426,7 @@ function parse_yara(text, file_name){
     }).done(function (html) {
         $('#yara_panel .spinner').removeClass('lds-facebook')
         let rule_json = JSON.parse(html)
-        if('error' in rule_json){
+        if ('error' in rule_json) {
             alert(rule_json.error)
             return
         }
@@ -460,21 +460,21 @@ function parse_yara(text, file_name){
 
 }
 
-function filter_yara_rules_change_handler(e){
+function filter_yara_rules_change_handler(e) {
     let text = $(this).val()
     let rule_name = null
     let index = null
-    $(`#yara_rules li`).each(function(item){
-        if(text.length == 0)
-            $(this).css({'display':''})
+    $(`#yara_rules li`).each(function (item) {
+        if (text.length == 0)
+            $(this).css({ 'display': '' })
         else {
             text = text.toLowerCase()
             rule_name = $(this).attr('rule_key').toLowerCase()
             index = rule_name.search(text)
             if (index >= 0) {
-                $(this).css({'display':''})
+                $(this).css({ 'display': '' })
             } else {
-                $(this).css({'display':'None'})
+                $(this).css({ 'display': 'None' })
             }
         }
     })
@@ -507,17 +507,17 @@ function add_yara_rules(rule_json, yara_file_content) {
         rule_id += 1
 
         impacted_by[rule_name] = []
-        for( let i=0; i< rule_file.rules[rule_name].depends_on.length; i++) {
+        for (let i = 0; i < rule_file.rules[rule_name].depends_on.length; i++) {
             let impacted_by_rule_name = rule_file.rules[rule_name].depends_on[i]
             impacted_by[rule_name].push(rule_file.rules[impacted_by_rule_name])
         }
 
-        if(!(rule_name in impact_on)) {
+        if (!(rule_name in impact_on)) {
             impact_on[rule_name] = []
         }
-        for( let i=0; i< rule_file.rules[rule_name].depends_on.length; i++) {
+        for (let i = 0; i < rule_file.rules[rule_name].depends_on.length; i++) {
             let impact_on_rule_name = rule_file.rules[rule_name].depends_on[i]
-            if((impact_on_rule_name in impact_on) == false){
+            if ((impact_on_rule_name in impact_on) == false) {
                 impact_on[impact_on_rule_name] = []
             }
             impact_on[impact_on_rule_name].push(rule_file.rules[rule_name])
@@ -532,17 +532,17 @@ function add_yara_rules(rule_json, yara_file_content) {
                   </ul>`
     $('#yara_rules').html(rules_html)
 
-    $('span.toggle input').on('change', function(e){
+    $('span.toggle input').on('change', function (e) {
         let check_box = $(e.target)
         let rule_name = check_box.closest('li').find('span.rule_name').html()
         let rule_file = $('#yara_panel').data('rules')
         let impact_on = $('#yara_panel').data('impact_on')
         let impacted_by = $('#yara_panel').data('impacted_by')
 
-        if(check_box.is(':checked')) {
+        if (check_box.is(':checked')) {
             enable_rules(rule_file, impacted_by, rule_name)
         }
-        else{
+        else {
             disable_rules(rule_file, impact_on, rule_name)
             check_box.closest('li').removeClass('not_matched matched')
         }
@@ -562,7 +562,7 @@ function add_yara_rules(rule_json, yara_file_content) {
 
 }
 
-function topological_sort(rules, impact_on){
+function topological_sort(rules, impact_on) {
     let stack = []
     var result = []
     let visited = new Set()
@@ -573,10 +573,10 @@ function topological_sort(rules, impact_on){
 
     Object.entries(rules).forEach(entry => {
         var [rule_name, rule] = entry;
-        if(rule.color == 0 ) {
+        if (rule.color == 0) {
             dfs(rule, rules, impact_on, result)
         }
-        else if(rule.color == 1 ) {
+        else if (rule.color == 1) {
             alert('Error: Cycle detected in dependencies. Check ${rule_name}')
         }
     });
@@ -588,7 +588,7 @@ function topological_sort(rules, impact_on){
 function dfs(rule, rules, impact_on, result) {
     rule.color = 1 // grey
     let rule_name = rule.rule_name
-    for (let i = 0; i<impact_on[rule_name].length; i++) {
+    for (let i = 0; i < impact_on[rule_name].length; i++) {
         if (impact_on[rule_name][i].color == 0) {
             dfs(impact_on[rule_name][i], rules, impact_on, result)
         } else if (impact_on[rule_name][i].color == 1) {
@@ -599,18 +599,18 @@ function dfs(rule, rules, impact_on, result) {
     result.push(rule)
 }
 
-function is_rule_active(rule_record){
+function is_rule_active(rule_record) {
     return $(rule_record).find('span.toggle input').is(':checked');
 }
-function get_rule_record(rule_name){
+function get_rule_record(rule_name) {
     return $(`#yara_rules li[rule_key=${rule_name}]`)
 }
 
-function disable_rules(rule_file, impact_on,  rule_name){
+function disable_rules(rule_file, impact_on, rule_name) {
     let rule = rule_file.rules[rule_name]
     let will_be_impacted = null;
     let rule_li = null;
-    for(let i=0; i<impact_on[rule_name].length; i++) {
+    for (let i = 0; i < impact_on[rule_name].length; i++) {
         will_be_impacted = impact_on[rule_name][i]
         rule_li = get_rule_record(will_be_impacted.rule_name)
         rule_li.find('input').prop('checked', false)
@@ -619,11 +619,11 @@ function disable_rules(rule_file, impact_on,  rule_name){
     }
 }
 
-function enable_rules(rule_file, impacted_by,  rule_name){
+function enable_rules(rule_file, impacted_by, rule_name) {
     let rule = rule_file.rules[rule_name]
     let has_impact = null;
     let rule_li = null;
-    for(let i=0; i<impacted_by[rule_name].length; i++) {
+    for (let i = 0; i < impacted_by[rule_name].length; i++) {
         has_impact = impacted_by[rule_name][i]
         rule_li = get_rule_record(has_impact.rule_name)
         rule_li.find('input').prop('checked', true)
@@ -634,107 +634,131 @@ function enable_rules(rule_file, impacted_by,  rule_name){
 function removeNestedPositions(positions) {
     // Sort the positions based on their start index in ascending order
     positions.sort((a, b) => a.start_pos - b.start_pos);
-  
+
     // Iterate through the positions and remove any position that is completely contained within another position
     for (let i = 0; i < positions.length - 1; i++) {
-      const currentPos = positions[i];
-      const nextPos = positions[i + 1];
-      
-      if (currentPos.end_pos >= nextPos.end_pos) {
-        positions.splice(i + 1, 1);
-        i--;
-      } else if (currentPos.end_pos >= nextPos.start_pos) {
-        currentPos.end_pos = nextPos.end_pos;
-        positions.splice(i + 1, 1);
-        i--;
-      }
-    }
-  
-    return positions;
-  }
+        const currentPos = positions[i];
+        const nextPos = positions[i + 1];
 
-function rule_name_click_handler(e) {
-    
+        if (currentPos.end_pos >= nextPos.end_pos) {
+            positions.splice(i + 1, 1);
+            i--;
+        } else if (currentPos.end_pos >= nextPos.start_pos) {
+            currentPos.end_pos = nextPos.end_pos;
+            positions.splice(i + 1, 1);
+            i--;
+        }
+    }
+
+    return positions;
+}
+
+async function rule_name_click_handler(e) {
+
     let rules_text = $('#yara_panel').data('rules_content');
     let rule = get_rule(e.target.title)
     let rule_line = rule.line
-    load_yara_editor(rules_text, rule_line - 1)
-    return
-    let highlighted_text = Prism.highlight(rule.rule_text, Prism.languages.yara, 'yara')
+
+    let yara_editor = await load_yara_editor(rules_text, rule_line - 1)
 
     let active_tab = $('.hex_editor_tab.ui-tabs-active a')
     let active_tab_panel_id = active_tab.attr('href')
     let evaluation_result = $(active_tab_panel_id).data('evaluation_result')
 
-    if( typeof evaluation_result !== 'undefined'){
-        let rule_eval_object = evaluation_result[e.target.title]
-        if(typeof rule_eval_object !== 'undefined' ){
+
+    if (typeof evaluation_result !== 'undefined') {
+        var decorations = []
+
+        let end_conditions = getConditions(evaluation_result)
+        end_conditions.forEach(condition => {
+            var condition_start_position = yara_editor.getModel().getPositionAt(condition.start_pos)
+            var condition_end_position = yara_editor.getModel().getPositionAt(condition.end_pos)
+            var decoration = {
+                range: new monaco.Range(condition_start_position.lineNumber, condition_start_position.column,
+                    condition_end_position.lineNumber, condition_end_position.column),
+                options: {
+                    isWholeLine: false,
+                    className: 'evalDecoration',
+                    hoverMessage: { value: 'Evaluated to True' }
+
+                }
+            }
+            decorations.push(decoration)
+
+        })
+
+        let decorationId = yara_editor.deltaDecorations([], decorations);
+
+        var false_decorations = []
+        let false_conditions = getConditions(evaluation_result, false)
+        false_conditions.forEach(condition => {
+            var condition_start_position = yara_editor.getModel().getPositionAt(condition.start_pos)
+            var condition_end_position = yara_editor.getModel().getPositionAt(condition.end_pos)
+            var decoration = {
+                range: new monaco.Range(condition_start_position.lineNumber, condition_start_position.column,
+                    condition_end_position.lineNumber, condition_end_position.column),
+                options: {
+                    isWholeLine: false,
+                    className: 'evalFalseDecoration',
+                    hoverMessage: { value: 'Evaluated to False' }
+
+                }
+            }
+            false_decorations.push(decoration)
+
+        })
+
+        let falseDecorationId = yara_editor.deltaDecorations([], false_decorations);
+
+        
+
+    }
+
+}
+
+
+function getConditions(evaluation_result, return_true_conditions = true) {
+
+    var result = []
+    for (let rule_eval_name in evaluation_result) {
+        let rule_eval_object = evaluation_result[rule_eval_name]
+        if (typeof rule_eval_object !== 'undefined') {
 
             let end_conditions = []
             rule_eval_object.eval_details.condition.forEach(element => {
-                let end_condition = true
-                /*element.args.forEach(arg => {
-                    if(arg.name.endsWith('_res')){
-                    end_condition = false
-                    }
-                });*/
-
-                if(element.result.val == true){
-                    end_conditions.push({start_pos: element.start_pos - rule.start_pos, end_pos: element.end_pos - rule.start_pos})
+                if (element.result.val == return_true_conditions) {
+                    end_conditions.push({ start_pos: element.start_pos, end_pos: element.end_pos})
                 }
             });
 
             end_conditions = removeNestedPositions(end_conditions)
-            let rule_text = rule.rule_text
-            for (const end_condition of end_conditions) {
-                const {start_pos, end_pos} = end_condition;
-                let result = ''
-                result +=  rule_text.slice(0, start_pos);
-                let data = rule_text.slice(start_pos, end_pos);
-                let lines = data.indexOf('\r\n')>=0? data.split("\r\n"): data.split('\n')
-                if(lines.length>0){
-                    lines.forEach(line => {
-                        const numSpaces = (line.match(/^\s+/) || [''])[0].length;
-                        result += `${' '.repeat(numSpaces)}<span class="eval-true">${line.trim()}</span>\r\n`;
-                    });
-                    result = result.slice(0, result.length -2)
-                }
-                result += rule_text.slice(end_pos);
-                rule_text = result
-            }
-            
-            $( "#yara_rule_dialog" ).html(`<p class='yara-text'>${highlighted_text}</p><p class='yara-top'>${rule_text}</p>`)
+            result = result.concat(end_conditions)
         }
+
     }
-    else{
-        $( "#yara_rule_dialog" ).html(`<p>${highlighted_text}</p>`)
-    }
+    return result
 
-
-
-   
-    $( "#yara_rule_dialog" ).dialog("option","title",e.target.title).dialog( "open" );
 }
 
-function get_rule_text(rule_name){
+function get_rule_text(rule_name) {
     let rules_content = $('#yara_panel').data('rules_content')
     let rule_object = get_rule(rule_name)
     let rule_text = rules_content.slice(rule_object.start_pos, rule_object.end_pos)
-    return {start_pos: rule_object.start_pos, rule_text: rule_text}
+    return { start_pos: rule_object.start_pos, rule_text: rule_text }
 }
 
-function get_rule(rule_name){
+function get_rule(rule_name) {
     let rules = $('#yara_panel').data('rules')
     let rule_object = rules.rules[rule_name]
     return rule_object
 }
-function rule_eval_detail_click_handler(e){
+function rule_eval_detail_click_handler(e) {
     debugger;
     let active_tab = $('.hex_editor_tab.ui-tabs-active a')
     let active_tab_panel_id = active_tab.attr('href')
     let evaluation_result = $(active_tab_panel_id).data('evaluation_result')
 
-    if( typeof evaluation_result === 'undefined'){
+    if (typeof evaluation_result === 'undefined') {
         alert("You should run the rule against the current file to see the evaluation details")
         return
     }
@@ -743,7 +767,7 @@ function rule_eval_detail_click_handler(e){
     let rule_name = $(yara_rule_li).attr('rule_key')
     let rule = get_rule_text(rule_name)
     let rule_eval_object = evaluation_result[$(yara_rule_li).attr('rule_key')]
-    if( typeof rule_eval_object === 'undefined'){
+    if (typeof rule_eval_object === 'undefined') {
         alert("You should run the rule against the current file to see the evaluation details")
         return
     }
@@ -753,34 +777,34 @@ function rule_eval_detail_click_handler(e){
     let condition_start = 0
     let condition_end = 0
     let condition_val = 0
-    for(let i=0; i<rule_eval_object.eval_details.condition.length; i++){
+    for (let i = 0; i < rule_eval_object.eval_details.condition.length; i++) {
         condition_start = rule_eval_object.eval_details.condition[i].start_pos - rule.start_pos
         condition_end = rule_eval_object.eval_details.condition[i].end_pos - rule.start_pos
         condition_text = rule.rule_text.slice(condition_start, condition_end)
-        condition_text = condition_text.replace(/^[ \t]+/gm,'').trim()
+        condition_text = condition_text.replace(/^[ \t]+/gm, '').trim()
 
         // temporary fix for handling missing paranthesis at the end of a condition
         // if the number of openning paranthesis is more than the closing ones,
         // then we need to add a closing paranthesis at the end
         let open_paranthesis_count = (condition_text.match(/\(/g) || []).length
         let close_paranthesis_count = (condition_text.match(/\)/g) || []).length
-        if(open_paranthesis_count>close_paranthesis_count ){
+        if (open_paranthesis_count > close_paranthesis_count) {
             condition_text += ')'
         }
 
-        if('result' in rule_eval_object.eval_details.condition[i] && !rule_eval_object.eval_details.condition[i].result.name.endsWith('_unsupported'))
+        if ('result' in rule_eval_object.eval_details.condition[i] && !rule_eval_object.eval_details.condition[i].result.name.endsWith('_unsupported'))
             condition_val = rule_eval_object.eval_details.condition[i].result.val
         else
             condition_val = "false (unsupported)"
-        if(Number.isInteger(condition_val)){
+        if (Number.isInteger(condition_val)) {
             condition_val = `0x${condition_val.toString(16)}`
         }
         condition_html += `<tr><td class="condition">${condition_text}</td>
                             <td class="condition_res">${condition_val}</td></tr>`
     }
 
-    $( "#yara_rule_eval_dialog" ).html(`<table>${condition_html}</table>`)
-    $( "#yara_rule_eval_dialog" ).dialog("option","title",$(yara_rule_li).attr('rule_key')).dialog( "open" );
+    $("#yara_rule_eval_dialog").html(`<table>${condition_html}</table>`)
+    $("#yara_rule_eval_dialog").dialog("option", "title", $(yara_rule_li).attr('rule_key')).dialog("open");
 
 }
 
@@ -791,7 +815,7 @@ function yara_dependency_graph_click_handler(e) {
 }
 
 
-function load_yara_editor(yara_content, line = 0) {
+async function load_yara_editor(yara_content, line = 0) {
     $("#new_yara_rule_dialog").html(`
     <div id='yaraEditor'>
     </div>
@@ -802,7 +826,7 @@ function load_yara_editor(yara_content, line = 0) {
     return editor
 }
 
-function createYaraEditor(yara_content, line) {
+async function createYaraEditor(yara_content, line) {
 
     var monaco_options = {
         value: yara_content,
@@ -826,7 +850,7 @@ function createYaraEditor(yara_content, line) {
                 buttons: {
                     Yes: function () {
                         // save changes and close the editor
-                        
+
                         var files = new FormData()
                         const text = yara_editor.getValue()
                         const blob = new Blob([text], { type: 'text/plain' })
@@ -842,8 +866,8 @@ function createYaraEditor(yara_content, line) {
                             $('#yara_panel .spinner').removeClass('lds-facebook')
                             confirmDialog.dialog("close");
                             let rule_json = JSON.parse(html)
-                            if('error' in rule_json){
-                                if('error_obj' in rule_json){
+                            if ('error' in rule_json) {
+                                if ('error_obj' in rule_json) {
                                     const end_position = yara_editor.getModel().getPositionAt(rule_json.error_obj.token_start_pos + rule_json.error_obj.token_len)
                                     let markers = [{
                                         severity: monaco.MarkerSeverity.Error,
@@ -859,10 +883,10 @@ function createYaraEditor(yara_content, line) {
                                 $("#new_yara_rule_dialog").attr('status', '')
                                 return
                             }
-                            
+
                             add_yara_rules(rule_json, text)
                             $("#new_yara_rule_dialog").dialog("close");
-                            
+
                         }).fail(function (response) {
                             $(this).dialog("close");
                             $('#yara_panel .spinner').removeClass('lds-facebook')
@@ -909,9 +933,9 @@ function createYaraEditor(yara_content, line) {
         return yara_editor; // return the yara_editor instance
     });
 }
-  
 
-function register_yara(){
+
+function register_yara() {
     if (!monaco.languages.getLanguages().some(({ id }) => id === 'yara')) {
         // Register a new language
         monaco.languages.register({ id: 'Yara' });
@@ -919,10 +943,10 @@ function register_yara(){
         monaco.languages.setMonarchTokensProvider('Yara', yaraDef);
         // Set the editing configuration for the language
         monaco.languages.setLanguageConfiguration('Yara', yaraConfig);
-    }    
+    }
 }
 
-function show_rule_dependency(rule_name){
+function show_rule_dependency(rule_name) {
     let impact_on = $('#yara_panel').data('impact_on')
     let impacted_by = $('#yara_panel').data('impacted_by')
 
@@ -935,7 +959,7 @@ function show_rule_dependency(rule_name){
 
     $("#yara_rule_dependency_dialog").html(`<div>
                                                 <b>Rules depend on ${rule_name}:</b><br />
-                                                ${get_rule_names_html(impact_on_rules, '<div class="rule">{{rule_name}}</div>' ) }
+                                                ${get_rule_names_html(impact_on_rules, '<div class="rule">{{rule_name}}</div>')}
                                             </div>
                                             <br />
                                             <div>
@@ -943,17 +967,17 @@ function show_rule_dependency(rule_name){
                                                 ${get_rule_names_html(impacted_by_rules, '<div class="rule">{{rule_name}}</div>')}
                                             </div>`)
 
-    $("#yara_rule_dependency_dialog div.rule").on('click', function(e){
+    $("#yara_rule_dependency_dialog div.rule").on('click', function (e) {
         show_rule_dependency($(this).text())
     })
     $("#yara_rule_dependency_dialog").dialog("option", "title", ` Dependencies of ${rule_name}`).dialog("open")
 }
 
-function get_related_rule_names(relationships, rule_name, result){
-    if(rule_name in relationships){
-        for(let i=0; i< relationships[rule_name].length; i++){
+function get_related_rule_names(relationships, rule_name, result) {
+    if (rule_name in relationships) {
+        for (let i = 0; i < relationships[rule_name].length; i++) {
             result.add(relationships[rule_name][i].rule_name)
-            get_related_rule_names(relationships,relationships[rule_name][i].rule_name, result )
+            get_related_rule_names(relationships, relationships[rule_name][i].rule_name, result)
         }
     }
 }
@@ -994,8 +1018,7 @@ function match_rules(e) {
         tableWrapper.trigger('lazytable:refresh');
 
         let table = $(hex_editor).data('table')
-        if(table !== 'undefined')
-        {
+        if (table !== 'undefined') {
             table.clearData();
         }
 
@@ -1004,7 +1027,7 @@ function match_rules(e) {
         Object.keys(rule_file.sorted_rules).forEach(function (key) {
             let rule_name = rule_file.sorted_rules[key].rule_name
             let rule_li = get_rule_record(rule_name)
-            if(is_rule_active(rule_li) === true) {
+            if (is_rule_active(rule_li) === true) {
                 active_rules.set(rule_name, rule_file.sorted_rules[key])
             }
         });
@@ -1012,38 +1035,38 @@ function match_rules(e) {
         let process_status = $(hex_editor).find(".process_status")
         process_status.fadeIn(100)
         process_status.html(`Processing (0 out ${active_rules.size} is finished)`)
-        worker.postMessage({file: file, rules: active_rules, hex_editor_id: $(hex_editor).attr('id')})
+        worker.postMessage({ file: file, rules: active_rules, hex_editor_id: $(hex_editor).attr('id') })
         worker.onmessage = function (event) {
             let rule_file = $('#yara_panel').data('rules')
 
             let result = event.data;
 
-            let final_condition = result.condition[result.condition.length -1]
+            let final_condition = result.condition[result.condition.length - 1]
 
             let final_condition_eval = final_condition.result.val
 
-            let rule_name= result.rule_name
+            let rule_name = result.rule_name
 
             let hex_editor = $(`#${result.hex_editor_id}`)
 
             let process_status = $(hex_editor).find(".process_status")
 
             process_status.html(`Processing (${result.completed_rules_count} out ${result.active_rules_count} is finished)`)
-            if(result.completed_rules_count >= result.active_rules_count) {
+            if (result.completed_rules_count >= result.active_rules_count) {
                 process_status.fadeOut(1000)
             }
 
             let evaluation_result = $(`#${result.hex_editor_id}`).data('evaluation_result')
-''
-            if(typeof evaluation_result === 'undefined'){
+            ''
+            if (typeof evaluation_result === 'undefined') {
                 evaluation_result = {}
                 $(`#${result.hex_editor_id}`).data('evaluation_result', evaluation_result)
             }
 
-            evaluation_result[rule_name] = {eval_res :final_condition_eval, eval_details: result}
+            evaluation_result[rule_name] = { eval_res: final_condition_eval, eval_details: result }
 
             $(`li[rule_key=${rule_name}]`).removeClass('matched not_matched')
-            $(`li[rule_key=${rule_name}]`).addClass(`${final_condition_eval?'matched': 'not_matched'}`)
+            $(`li[rule_key=${rule_name}]`).addClass(`${final_condition_eval ? 'matched' : 'not_matched'}`)
 
             let matched_entity = null
 
@@ -1151,7 +1174,7 @@ function add_hex_marker(hex_editor, start_offset, end_offset) {
 
 function create_new_hexeditor_tab(file) {
 
-    const table_wrapper_template = ({id}) =>
+    const table_wrapper_template = ({ id }) =>
         `
         <div id="editorLayout${id}" class="editor_layout" style="width: 100% !important;">
             <div class="outer-center" >
@@ -1196,7 +1219,7 @@ function create_new_hexeditor_tab(file) {
                                     <span class="ui-icon ui-icon-circle-close ui-closable-tab"></span>
                                  </li>`)
 
-    let table_wrapper = [{'id': num_tabs}].map(table_wrapper_template).join('')
+    let table_wrapper = [{ 'id': num_tabs }].map(table_wrapper_template).join('')
     $("div#panels").append(
         `<div id="hexEdtPanel${num_tabs}" class="hexeditor_panel">${table_wrapper}</div>`
     );
@@ -1227,14 +1250,14 @@ function create_new_hexeditor_tab(file) {
         data: [], //assign data to table
         layout: "fitColumns", //fit columns to width of table (optional)
         // selectable:true,
-        clipboard:"copy",
+        clipboard: "copy",
         columns: [ //Define Table Columns
-            {title: "Rule Name", field: "rule_name", width: 300},
-            {title: "String Name", field: "string",},
-            {title: "Match No", field: "match_no", width: 100},
-            {title: "Start Offset", field: "start_offset", width: 100, cellClick: winDBG_cell_click_handler},
-            {title: "End Offset", field: "end_offset", width: 100, cellClick: winDBG_cell_click_handler},
-            {title: "Match", field: "match"},
+            { title: "Rule Name", field: "rule_name", width: 300 },
+            { title: "String Name", field: "string", },
+            { title: "Match No", field: "match_no", width: 100 },
+            { title: "Start Offset", field: "start_offset", width: 100, cellClick: winDBG_cell_click_handler },
+            { title: "End Offset", field: "end_offset", width: 100, cellClick: winDBG_cell_click_handler },
+            { title: "Match", field: "match" },
             // {title:"Date Of Birth", field:"dob", sorter:"date", hozAlign:"center"},
         ],
     });
@@ -1288,12 +1311,12 @@ function load_hex_editor(table_wrapper_id, file_content) {
                 row_marker = [],
                 color_class = ""
 
-            if(typeof markers !=='undefined')
+            if (typeof markers !== 'undefined')
                 row_marker = markers.get(get_row_id(data[0]))
 
             for (let i = 0; i < data[1].length; i++) {
                 color_class = ""
-                if(typeof row_marker !=='undefined' && row_marker.length>0) {
+                if (typeof row_marker !== 'undefined' && row_marker.length > 0) {
                     for (let j = 0; j < row_marker.length; j++) {
                         if (i >= row_marker[j]['start'] && i <= row_marker[j]['end']) {
                             color_class = "colored"
@@ -1313,25 +1336,25 @@ function load_hex_editor(table_wrapper_id, file_content) {
             let row_html = `<td class="td_offset noselect">${offset}</td><td>${hex}</td><td class="noselect">${text}</td>`
             return `<tr>${row_html}</tr>`;
         }
-    }).on('copy',(e) => {
+    }).on('copy', (e) => {
         let text = "",
             range = null,
             spans = null,
             nodes = null
         const selection = document.getSelection();
 
-        for(let range_index=0; range_index< selection.rangeCount; range_index++){
+        for (let range_index = 0; range_index < selection.rangeCount; range_index++) {
             range = selection.getRangeAt(range_index)
             spans = range.cloneContents()
 
-            for(let i = 0; i< spans.childNodes.length; i++){
-                if( spans.childNodes[i].tagName !== 'SPAN') {
+            for (let i = 0; i < spans.childNodes.length; i++) {
+                if (spans.childNodes[i].tagName !== 'SPAN') {
                     nodes = $(spans.childNodes[i]).find('span')
                     for (let j = 0; j < nodes.length; j++) {
                         text += `0x${$(nodes[j]).html()} `
                     }
                 }
-                else{
+                else {
                     text += `0x${$(spans.childNodes[i]).html()} `
                 }
             }
@@ -1348,7 +1371,7 @@ function load_hex_editor(table_wrapper_id, file_content) {
 function jump_to_addr(scroll_obj, address) {
     const height = 22.5
     const number_of_bytes_per_row = 16
-    var scroll_position = (Math.floor(address / number_of_bytes_per_row) ) * height
+    var scroll_position = (Math.floor(address / number_of_bytes_per_row)) * height
 
     scroll_position -= height
 
