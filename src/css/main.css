@@ -442,6 +442,22 @@ td.condition_res{
     background-color: lightsteelblue;
 }
 
+.evalTrueDecoration{
+    background-color: rgba(0, 80, 0, 0.2);
+}
+
+.evalFalseDecoration{
+    background-color: rgba(200, 0, 0, 0.2);
+}
+
+
+#new_yara_rule_dialog > div{
+    display: inline-block;
+    float: left;
+    width: 100%;
+    height: 100%;
+}
+
 #main_tab h1 { font-family: 'Open Sans Condensed', sans-serif; font-size: 64px; }
 
 #main_tab p, #yara_panel p { font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 28px; margin: 0 0 12px; }
@@ -457,3 +473,31 @@ td.condition_res{
 
 }
 
+/* yara highlighting */
+.yara_keyword{
+    color: purple;
+}
+
+.yara_comment{
+    color: green;
+}
+
+.yara_string{
+    color: blue;
+}
+
+.yara-top, .yara-text{
+    position: absolute;
+    top: 0px;
+    left: 8px;
+}
+
+
+.yara-top{
+    z-index: 1;
+    color: transparent;
+}
+
+.eval-true{
+    background-color: rgba(0, 80, 0, 0.2);
+}

@@ -32,7 +32,7 @@ if ('function' === typeof importScripts) {
     }
 
     function match_rule(file, rules, rule_name) {
-        debugger;
+        //debugger;
         let evaluated_rule = {strings: new Map(), condition: []}
         let rule = rules.get(rule_name)
 
