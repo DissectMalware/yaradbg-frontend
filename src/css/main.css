@@ -442,7 +442,7 @@ td.condition_res{
     background-color: lightsteelblue;
 }
 
-.evalDecoration{
+.evalTrueDecoration{
     background-color: rgba(0, 80, 0, 0.2);
 }
 

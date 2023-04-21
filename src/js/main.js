@@ -669,17 +669,36 @@ async function rule_name_click_handler(e) {
     if (typeof evaluation_result !== 'undefined') {
         var decorations = []
 
-        let end_conditions = getConditions(evaluation_result)
-        end_conditions.forEach(condition => {
+        /*
+        var viewZoneId = yara_editor.changeViewZones(function (changeAccessor) {
+            var domNode = document.createElement("div");
+            domNode.style.background = "lightgreen";
+            domNode.innerHTML = "Click to toggle";
+            domNode.className = "toggleButton";
+            domNode.addEventListener("click", () => {
+                const zone = changeAccessor.getViewZone(viewZoneId);
+                zone.heightInLines = zone.heightInLines === 3 ? 6 : 3;
+                changeAccessor.layoutZone(viewZoneId);
+            });
+            viewZoneId = changeAccessor.addZone({
+                afterLineNumber: 3,
+                heightInLines: 3,
+                domNode: domNode,
+            });
+        });*/
+        
+        let ranges = get_ranges(evaluation_result)
+
+        ranges.forEach(condition => {
             var condition_start_position = yara_editor.getModel().getPositionAt(condition.start_pos)
-            var condition_end_position = yara_editor.getModel().getPositionAt(condition.end_pos)
+            var condition_end_position = yara_editor.getModel().getPositionAt(condition.end_pos+1)
             var decoration = {
                 range: new monaco.Range(condition_start_position.lineNumber, condition_start_position.column,
                     condition_end_position.lineNumber, condition_end_position.column),
                 options: {
                     isWholeLine: false,
-                    className: 'evalDecoration',
-                    hoverMessage: { value: 'Evaluated to True' }
+                    className: condition.condition_eval ? 'evalTrueDecoration' : 'evalFalseDecoration',
+                    hoverMessage: { value: condition.condition_eval ? 'Evaluated to True' : 'Evaluated to False' }
 
                 }
             }
@@ -687,58 +706,68 @@ async function rule_name_click_handler(e) {
 
         })
 
-        let decorationId = yara_editor.deltaDecorations([], decorations);
-
-        var false_decorations = []
-        let false_conditions = getConditions(evaluation_result, false)
-        false_conditions.forEach(condition => {
-            var condition_start_position = yara_editor.getModel().getPositionAt(condition.start_pos)
-            var condition_end_position = yara_editor.getModel().getPositionAt(condition.end_pos)
-            var decoration = {
-                range: new monaco.Range(condition_start_position.lineNumber, condition_start_position.column,
-                    condition_end_position.lineNumber, condition_end_position.column),
-                options: {
-                    isWholeLine: false,
-                    className: 'evalFalseDecoration',
-                    hoverMessage: { value: 'Evaluated to False' }
-
-                }
-            }
-            false_decorations.push(decoration)
-
-        })
-
-        let falseDecorationId = yara_editor.deltaDecorations([], false_decorations);
-
-        
+        let eval_decorations_id = yara_editor.deltaDecorations([], decorations);
 
     }
 
 }
 
-
-function getConditions(evaluation_result, return_true_conditions = true) {
+function get_ranges(evaluation_result) {
 
     var result = []
     for (let rule_eval_name in evaluation_result) {
         let rule_eval_object = evaluation_result[rule_eval_name]
         if (typeof rule_eval_object !== 'undefined') {
 
-            let end_conditions = []
-            rule_eval_object.eval_details.condition.forEach(element => {
-                if (element.result.val == return_true_conditions) {
-                    end_conditions.push({ start_pos: element.start_pos, end_pos: element.end_pos})
+            let condition_parts = rule_eval_object.eval_details.condition.length
+            let current_condition_part = rule_eval_object.eval_details.condition[condition_parts - 1]
+            let buffer = Array(current_condition_part.end_pos - current_condition_part.start_pos + 1)
+            let base_index = current_condition_part.start_pos
+            for (let i = condition_parts - 1; i >= 0; i--) {
+                current_condition_part = rule_eval_object.eval_details.condition[i]
+                let start_index = current_condition_part.start_pos - base_index
+                let end_index = current_condition_part.end_pos - base_index
+                if (typeof current_condition_part.result.val === 'boolean') {
+                    if (current_condition_part.result.val) {
+                        buffer.fill(true, start_index, end_index + 1)
+                    }
+                    else {
+                        buffer.fill(false, start_index, end_index + 1)
+                    }
                 }
-            });
+            }
+            result = result.concat(get_contiguous_ranges(buffer, base_index))
 
-            end_conditions = removeNestedPositions(end_conditions)
-            result = result.concat(end_conditions)
         }
 
     }
     return result
 
 }
+
+function get_contiguous_ranges(arr, base_index) {
+    let ranges = [];
+    let startIndex = 0;
+    let endIndex = 0;
+    let currentValue = arr[0];
+
+    for (let i = 1; i < arr.length; i++) {
+        if (arr[i] !== currentValue) {
+            endIndex = i - 1;
+            ranges.push({ start_pos: base_index + startIndex, end_pos: base_index + endIndex, condition_eval: currentValue });
+            startIndex = i;
+            currentValue = arr[i];
+        }
+    }
+
+    // Add the last range
+    endIndex = arr.length - 1;
+    ranges.push({ start_pos: base_index + startIndex, end_pos: base_index + endIndex, condition_eval: currentValue });
+
+    return ranges;
+}
+
+
 
 function get_rule_text(rule_name) {
     let rules_content = $('#yara_panel').data('rules_content')
@@ -773,6 +802,22 @@ function rule_eval_detail_click_handler(e) {
     }
 
     let condition_html = ''
+    let steps = get_eval_steps(rule_eval_object, rule)
+    steps.forEach(step => {
+        condition_html += `<tr><td class="condition">${step.condition}</td>
+        <td class="condition_res">${step.condition_eval}</td></tr>`
+
+    });
+
+    $("#yara_rule_eval_dialog").html(`<table>${condition_html}</table>`)
+    $("#yara_rule_eval_dialog").dialog("option", "title", $(yara_rule_li).attr('rule_key')).dialog("open");
+
+}
+
+function get_eval_steps(rule_eval_object, rule) {
+
+    var steps = []
+
     let condition_text = ''
     let condition_start = 0
     let condition_end = 0
@@ -799,13 +844,12 @@ function rule_eval_detail_click_handler(e) {
         if (Number.isInteger(condition_val)) {
             condition_val = `0x${condition_val.toString(16)}`
         }
-        condition_html += `<tr><td class="condition">${condition_text}</td>
-                            <td class="condition_res">${condition_val}</td></tr>`
+        steps.push({
+            'condition': condition_text,
+            'condition_eval': condition_val
+        })
     }
-
-    $("#yara_rule_eval_dialog").html(`<table>${condition_html}</table>`)
-    $("#yara_rule_eval_dialog").dialog("option", "title", $(yara_rule_li).attr('rule_key')).dialog("open");
-
+    return steps
 }
 
 function yara_dependency_graph_click_handler(e) {
