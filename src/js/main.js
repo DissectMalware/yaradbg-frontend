@@ -686,12 +686,12 @@ async function rule_name_click_handler(e) {
                 domNode: domNode,
             });
         });*/
-        
+
         let ranges = get_ranges(evaluation_result)
 
         ranges.forEach(condition => {
             var condition_start_position = yara_editor.getModel().getPositionAt(condition.start_pos)
-            var condition_end_position = yara_editor.getModel().getPositionAt(condition.end_pos+1)
+            var condition_end_position = yara_editor.getModel().getPositionAt(condition.end_pos + 1)
             var decoration = {
                 range: new monaco.Range(condition_start_position.lineNumber, condition_start_position.column,
                     condition_end_position.lineNumber, condition_end_position.column),
@@ -980,14 +980,42 @@ async function createYaraEditor(yara_content, line) {
 
 
 function register_yara() {
-    if (!monaco.languages.getLanguages().some(({ id }) => id === 'yara')) {
+    if (!monaco.languages.getLanguages().some(({ id }) => id === 'Yara')) {
         // Register a new language
         monaco.languages.register({ id: 'Yara' });
+
+        monaco.languages.registerReferenceProvider('Yara', {
+            provideReferences: find_all_references
+        });
         // Register a tokens provider for the language
         monaco.languages.setMonarchTokensProvider('Yara', yaraDef);
         // Set the editing configuration for the language
         monaco.languages.setLanguageConfiguration('Yara', yaraConfig);
+
     }
+}
+
+function find_all_references(model, position, context, token) {
+    // Get the current word at the current position 
+    const word = model.getWordAtPosition(position);
+    if (!word) {
+        return Promise.resolve([]);
+    }
+
+    // Find all references to the current word in the current model 
+    const references = [];
+    model.findMatches(word.word, true, false, true, ' \r\n\t', false).forEach((match) => {
+        if (match.range.containsPosition(position) == false) {
+            references.push({
+                uri: model.uri,
+                range: match.range,
+            });
+        }
+    });
+
+    // Return the references
+    return Promise.resolve(references);
+
 }
 
 function show_rule_dependency(rule_name) {
