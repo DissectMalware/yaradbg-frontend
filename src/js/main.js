@@ -984,6 +984,67 @@ function register_yara() {
         // Register a new language
         monaco.languages.register({ id: 'Yara' });
 
+        // Set code snippet for rule creation
+        monaco.languages.registerCompletionItemProvider("Yara", {
+            provideCompletionItems: function (model, position) {
+
+                var word = model.getWordUntilPosition(position);
+                var range = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endColumn: word.endColumn,
+                };
+
+                const yaraKeywords = [
+                    'all', 'and', 'any', 'ascii', 'at', 'base64', 'base64wide', 'condition',
+                    'contains', 'endswith', 'entrypoint', 'false', 'filesize', 'for', 'fullword', 'global',
+                    'import', 'icontains', 'iendswith', 'iequals', 'in', 'include', 'int16', 'int16be',
+                    'int32', 'int32be', 'int8', 'int8be', 'istartswith', 'matches', 'meta', 'nocase',
+                    'none', 'not', 'of', 'or', 'private', 'rule', 'startswith', 'strings',
+                    'them', 'true', 'uint16', 'uint16be', 'uint32', 'uint32be', 'uint8', 'uint8be',
+                    'wide', 'xor', 'defined'
+                ];
+
+                // Get a list of existing rule names, variables, and YARA keywords, and remove duplicates
+                const existingItems = Array.from(new Set([
+                    ...model.getValue().match(/rule\s+\w+/g).map(rule => rule.replace(/rule\s+/, "")),
+                    ...model.getValue().match(/\$\w+\b\s*=/g).map(rule => rule.replace(/\s*=/, "")),
+                    ...yaraKeywords
+                ])); // remove the $ prefix from variable names
+
+                return {
+                    suggestions: [
+                        {
+                            label: "rule",
+                            kind: monaco.languages.CompletionItemKind.Snippet,
+                            insertText: `
+rule rule_name
+{
+    meta:
+        Author: ""
+        Description: ""
+    strings:
+        $s = ""
+    condition:
+        all of them
+}`,
+                            documentation: "Insert a generic yara rule",
+                            range: range
+                        },
+                        ...existingItems.map(item => ({
+                            label: item,
+                            kind: yaraKeywords.includes(item) ? monaco.languages.CompletionItemKind.Keyword :  monaco.languages.CompletionItemKind.Variable,
+                            range: range
+                          }))
+                    ]
+                };
+
+            }
+        });
+
+
+
         monaco.languages.registerReferenceProvider('Yara', {
             provideReferences: find_all_references
         });
