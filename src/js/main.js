@@ -385,14 +385,6 @@ $(document).ready(function () {
         }
     })
 
-    /*
-    $('#tabpanel').on("click", "span", function (e) {
-        debugger;
-        $('span.selected_cell').removeClass('selected_cell')
-        $(this).addClass('selected_cell')
-
-    })*/
-
 
 });
 
@@ -440,7 +432,7 @@ function parse_yara(text, file_name) {
         }
     });
     $('#yara_panel').html(`
-                                <div class="yara_rule_header">
+                                <div id='yaralogo'>
                                     <img src="img/yara-icon.png"/>
                                 </div>
                                 <div><input id="filter_yara_rules" type="text" placeholder="Filter Yara Rules" /></div>
@@ -686,12 +678,12 @@ async function rule_name_click_handler(e) {
                 domNode: domNode,
             });
         });*/
-        
+
         let ranges = get_ranges(evaluation_result)
 
         ranges.forEach(condition => {
             var condition_start_position = yara_editor.getModel().getPositionAt(condition.start_pos)
-            var condition_end_position = yara_editor.getModel().getPositionAt(condition.end_pos+1)
+            var condition_end_position = yara_editor.getModel().getPositionAt(condition.end_pos + 1)
             var decoration = {
                 range: new monaco.Range(condition_start_position.lineNumber, condition_start_position.column,
                     condition_end_position.lineNumber, condition_end_position.column),
@@ -980,14 +972,122 @@ async function createYaraEditor(yara_content, line) {
 
 
 function register_yara() {
-    if (!monaco.languages.getLanguages().some(({ id }) => id === 'yara')) {
+    if (!monaco.languages.getLanguages().some(({ id }) => id === 'Yara')) {
         // Register a new language
         monaco.languages.register({ id: 'Yara' });
+
+        // Set code snippet for rule creation
+        monaco.languages.registerCompletionItemProvider("Yara", {
+            triggerCharacters: ['$', '@', '!'],
+            provideCompletionItems: function (model, position) {
+                const content = model.getValue()
+
+                var word = model.getWordUntilPosition(position);
+
+                var range = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endColumn: word.endColumn,
+                };
+
+                const yara_keywords = [
+                    'all', 'and', 'any', 'ascii', 'at', 'base64', 'base64wide', 'condition',
+                    'contains', 'endswith', 'entrypoint', 'false', 'filesize', 'for', 'fullword', 'global',
+                    'import', 'icontains', 'iendswith', 'iequals', 'in', 'include', 'int16', 'int16be',
+                    'int32', 'int32be', 'int8', 'int8be', 'istartswith', 'matches', 'meta', 'nocase',
+                    'none', 'not', 'of', 'or', 'private', 'rule', 'startswith', 'strings',
+                    'them', 'true', 'uint16', 'uint16be', 'uint32', 'uint32be', 'uint8', 'uint8be',
+                    'wide', 'xor', 'defined'
+                ];
+
+                // Get a list of existing rule names, variables, and YARA keywords, and remove duplicates
+                const string_vars = (content.match(/\$\w+\b\s*=/g) || []).map(rule => rule.replace(/\s*=/, "").replace('$', ''))
+                const rule_names = Array.from(new Set([
+                    ...(content.match(/rule\s+\w+/g) ||[]).map(rule => rule.replace(/rule\s+/, "")),
+                ])); // remove the $ prefix from variable names
+
+                const strings = Array.from(new Set([
+                    ...string_vars,
+                ]))
+
+                const items = [
+                    {
+                        label: "rule",
+                        kind: monaco.languages.CompletionItemKind.Snippet,
+                        insertText: `rule rule_name
+{
+    meta:
+        author = ""
+        description =  ""
+    strings:
+        $s = ""
+    condition:
+        all of them
+}`,
+                        documentation: "Insert a generic yara rule",
+                        range: range
+                    },
+                    ...rule_names.map(item => ({
+                        label: item,
+                        kind: monaco.languages.CompletionItemKind.Class,
+                        insertText: item,
+                        range: range
+                    })),
+                    ...yara_keywords.map(item => ({
+                        label: item,
+                        insertText: item,
+                        kind: monaco.languages.CompletionItemKind.Keyword,
+                        range: range
+                    })),
+                    ...strings.map(item => ({
+                        label: item,
+                        insertText: item,
+                        kind: monaco.languages.CompletionItemKind.Variable,
+                        range: range
+                    })),
+                ]
+
+                return {
+                    suggestions: items
+                };
+
+            }
+        });
+
+        monaco.languages.registerReferenceProvider('Yara', {
+            provideReferences: find_all_references
+        });
         // Register a tokens provider for the language
         monaco.languages.setMonarchTokensProvider('Yara', yaraDef);
         // Set the editing configuration for the language
         monaco.languages.setLanguageConfiguration('Yara', yaraConfig);
+
     }
+}
+
+
+function find_all_references(model, position, context, token) {
+    // Get the current word at the current position 
+    const word = model.getWordAtPosition(position);
+    if (!word) {
+        return Promise.resolve([]);
+    }
+
+    // Find all references to the current word in the current model 
+    const references = [];
+    model.findMatches(word.word, true, false, true, ' \r\n\t', false).forEach((match) => {
+        if (match.range.containsPosition(position) == false) {
+            references.push({
+                uri: model.uri,
+                range: match.range,
+            });
+        }
+    });
+
+    // Return the references
+    return Promise.resolve(references);
+
 }
 
 function show_rule_dependency(rule_name) {
