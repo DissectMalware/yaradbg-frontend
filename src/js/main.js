@@ -385,14 +385,6 @@ $(document).ready(function () {
         }
     })
 
-    /*
-    $('#tabpanel').on("click", "span", function (e) {
-        debugger;
-        $('span.selected_cell').removeClass('selected_cell')
-        $(this).addClass('selected_cell')
-
-    })*/
-
 
 });
 
@@ -440,7 +432,7 @@ function parse_yara(text, file_name) {
         }
     });
     $('#yara_panel').html(`
-                                <div class="yara_rule_header">
+                                <div id='yaralogo'>
                                     <img src="img/yara-icon.png"/>
                                 </div>
                                 <div><input id="filter_yara_rules" type="text" placeholder="Filter Yara Rules" /></div>
@@ -986,9 +978,12 @@ function register_yara() {
 
         // Set code snippet for rule creation
         monaco.languages.registerCompletionItemProvider("Yara", {
+            triggerCharacters: ['$', '@', '!'],
             provideCompletionItems: function (model, position) {
+                const content = model.getValue()
 
                 var word = model.getWordUntilPosition(position);
+
                 var range = {
                     startLineNumber: position.lineNumber,
                     endLineNumber: position.lineNumber,
@@ -996,7 +991,7 @@ function register_yara() {
                     endColumn: word.endColumn,
                 };
 
-                const yaraKeywords = [
+                const yara_keywords = [
                     'all', 'and', 'any', 'ascii', 'at', 'base64', 'base64wide', 'condition',
                     'contains', 'endswith', 'entrypoint', 'false', 'filesize', 'for', 'fullword', 'global',
                     'import', 'icontains', 'iendswith', 'iequals', 'in', 'include', 'int16', 'int16be',
@@ -1007,43 +1002,58 @@ function register_yara() {
                 ];
 
                 // Get a list of existing rule names, variables, and YARA keywords, and remove duplicates
-                const existingItems = Array.from(new Set([
-                    ...model.getValue().match(/rule\s+\w+/g).map(rule => rule.replace(/rule\s+/, "")),
-                    ...model.getValue().match(/\$\w+\b\s*=/g).map(rule => rule.replace(/\s*=/, "")),
-                    ...yaraKeywords
+                const string_vars = (content.match(/\$\w+\b\s*=/g) || []).map(rule => rule.replace(/\s*=/, "").replace('$', ''))
+                const rule_names = Array.from(new Set([
+                    ...(content.match(/rule\s+\w+/g) ||[]).map(rule => rule.replace(/rule\s+/, "")),
                 ])); // remove the $ prefix from variable names
 
-                return {
-                    suggestions: [
-                        {
-                            label: "rule",
-                            kind: monaco.languages.CompletionItemKind.Snippet,
-                            insertText: `
-rule rule_name
+                const strings = Array.from(new Set([
+                    ...string_vars,
+                ]))
+
+                const items = [
+                    {
+                        label: "rule",
+                        kind: monaco.languages.CompletionItemKind.Snippet,
+                        insertText: `rule rule_name
 {
     meta:
-        Author: ""
-        Description: ""
+        author = ""
+        description =  ""
     strings:
         $s = ""
     condition:
         all of them
 }`,
-                            documentation: "Insert a generic yara rule",
-                            range: range
-                        },
-                        ...existingItems.map(item => ({
-                            label: item,
-                            kind: yaraKeywords.includes(item) ? monaco.languages.CompletionItemKind.Keyword :  monaco.languages.CompletionItemKind.Variable,
-                            range: range
-                          }))
-                    ]
+                        documentation: "Insert a generic yara rule",
+                        range: range
+                    },
+                    ...rule_names.map(item => ({
+                        label: item,
+                        kind: monaco.languages.CompletionItemKind.Class,
+                        insertText: item,
+                        range: range
+                    })),
+                    ...yara_keywords.map(item => ({
+                        label: item,
+                        insertText: item,
+                        kind: monaco.languages.CompletionItemKind.Keyword,
+                        range: range
+                    })),
+                    ...strings.map(item => ({
+                        label: item,
+                        insertText: item,
+                        kind: monaco.languages.CompletionItemKind.Variable,
+                        range: range
+                    })),
+                ]
+
+                return {
+                    suggestions: items
                 };
 
             }
         });
-
-
 
         monaco.languages.registerReferenceProvider('Yara', {
             provideReferences: find_all_references
@@ -1055,6 +1065,7 @@ rule rule_name
 
     }
 }
+
 
 function find_all_references(model, position, context, token) {
     // Get the current word at the current position 
