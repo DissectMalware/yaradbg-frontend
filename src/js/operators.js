@@ -368,4 +368,3 @@ function get_boolean(string) {
         return string
     return parseBool(string)
 }
-
