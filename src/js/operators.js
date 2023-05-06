@@ -20,6 +20,9 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                 case '+':
                     result = add_operator(task.args[0], task.args[1])
                     break
+                case '-':
+                    result = minus_operator(task.args[0], task.args[1])
+                    break
                 case 'and':
                     result = and_operator(task.args[0], task.args[1])
                     break
@@ -29,40 +32,43 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                 case 'not':
                     result = not_operator(task.args[0])
                     break
-                case  'uint8':
-                case  'uint8be':
+                case 'uint8':
+                case 'uint8be':
                     result = integer_operator(task.args[1], file, 1)
                     break
-                case  'uint16':
+                case 'uint16':
                     result = integer_operator(task.args[1], file, 2)
                     break
-                case  'uint32':
+                case 'uint32':
                     result = integer_operator(task.args[1], file, 4)
                     break
-                case  'uint16be':
+                case 'uint16be':
                     result = integer_operator(task.args[1], file, 2, false, false)
                     break
-                case  'uint32be':
+                case 'uint32be':
                     result = integer_operator(task.args[1], file, 4, false, false)
                     break
-                case  'int8':
-                case  'int8be':
+                case 'int8':
+                case 'int8be':
                     result = integer_operator(task.args[1], file, 1, true)
                     break
-                case  'int16':
+                case 'int16':
                     result = integer_operator(task.args[1], file, 2, true)
                     break
-                case  'int32':
+                case 'int32':
                     result = integer_operator(task.args[1], file, 4, true)
                     break
-                case  'int16be':
+                case 'int16be':
                     result = integer_operator(task.args[1], file, 2, true, false)
                     break
-                case  'int32be':
+                case 'int32be':
                     result = integer_operator(task.args[1], file, 4, true, false)
                     break
                 case 'identifier':
                     result = is_identifier_matched(task.args[0], rules)
+                    break
+                case 'STRING_IDENTIFIER':
+                    result = task.args[0]
                     break
                 case '<':
                 case '<=':
@@ -71,6 +77,17 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
                 case '==':
                 case '!=':
                     result = logical_comparison(task.op, task.args[0], task.args[1])
+                    break
+                case 'in':
+                    result = in_operator(task.args[0], task.args[1], evaluated_rule.strings)
+                    break
+                case '..':
+                    result = {
+                        name: `range`,
+                        val: [get_number(task.args[0].val), get_number(task.args[1].val)],
+                        start_pos: task.args[0].start_pos,
+                        end_pos: task.args[1].end_pos
+                    }
                     break
                 default:
                     console.log(`"${task.op}" is not supported yet`)
@@ -94,6 +111,24 @@ export function eval_condition(file, condition_tasks, rules, evaluated_rule) {
 
     evaluated_rule.condition = condition_tasks
     //debugger;
+}
+
+function in_operator(arg_left, range, strings) {
+    let target = strings.get(arg_left.val_str.slice(1))
+    let result = false;
+    for (let i = 0; i < target.length; i++) {
+        if (target[i].start >= range.val[0] && target[i].end <= range.val[1]) {
+            result = true;
+            break;
+        }
+    }
+    return {
+        name: 'in_res',
+        val: result,
+        start_pos: arg_left.start_pos,
+        end_pos: range.end_pos
+    }
+
 }
 
 function at_operator(arg_left, arg_right, strings) {
@@ -158,7 +193,6 @@ function get_arg(arg, evaluated_rule, evaluated_tasks, file) {
 }
 
 function is_identifier_matched(arg, rules) {
-
     let identifier_matched = false
     if (rules.has(arg.val)) {
         identifier_matched = rules.get(arg.val).condition[rules.get(arg.val).condition.length - 1].result.val
@@ -224,6 +258,15 @@ function add_operator(arg_left, arg_right) {
     return {
         name: 'add_res',
         val: get_number(arg_left.val) + get_number(arg_right.val),
+        start_pos: arg_left.start_pos,
+        end_pos: arg_left.end_pos
+    }
+}
+
+function minus_operator(arg_left, arg_right) {
+    return {
+        name: 'minus_res',
+        val: get_number(arg_left.val) - get_number(arg_right.val),
         start_pos: arg_left.start_pos,
         end_pos: arg_left.end_pos
     }
