@@ -184,6 +184,16 @@ function get_arg(arg, evaluated_rule, evaluated_tasks, file) {
         let string_name = arg.val.slice(1)
         arg.val = evaluated_rule.strings.get(string_name).length
         return arg
+    } else if (arg.name == 'STRING_LENGTH') {
+        let string_name = arg.val.slice(1)
+        let matches = evaluated_rule.strings.get(string_name)
+        arg.val = matches.length > 0?  matches[0].end - matches[0].start + 1: -1
+        return arg
+    } else if (arg.name == 'STRING_OFFSET') {
+        let string_name = arg.val.slice(1)
+        let matches = evaluated_rule.strings.get(string_name)
+        arg.val = matches.length > 0?  matches[0].start: -1
+        return arg
     } else if (arg.name === 'FILESIZE') {
         arg.val = file.length
         return arg
