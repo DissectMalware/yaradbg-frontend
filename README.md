@@ -6,4 +6,10 @@ YaraDbg frontend, this project, is the frontend application for YaraDbg (live on
 # Demo
 Please see: https://twitter.com/DissectMalware/status/1651336730937794560
 
+# Live Yaradbg
+Visit https://yaradbg.dev
+
+# Run locally using Docker
+Check this [YaraDbg Container](https://github.com/DissectMalware/yaradbg-container) project out.
+
 
